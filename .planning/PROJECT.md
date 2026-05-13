@@ -26,12 +26,11 @@ Eliminate the manual, repetitive work of applying to jobs while keeping the huma
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Project structure, .gitignore, and WebFetch permission configured — *Validated in Phase 01: Project Structure*
 
 ### Active
 
 **Foundation**
-- [ ] Project structure, .gitignore, and WebFetch permission configured
 - [ ] LaTeX resume source files added to `resume/`
 - [ ] `profile.yaml` schema created and populated (form-first: work auth, visa, salary, remote pref)
 - [ ] `criteria.yaml` created with job search filters
@@ -118,4 +117,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-13 — Milestone v1.0 Foundation started*
+*Last updated: 2026-05-13 — Phase 01 (Project Structure) complete*
