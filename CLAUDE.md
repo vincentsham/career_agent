@@ -130,3 +130,93 @@ A 3-phase career agent that tailors resumes, fills job applications, and scrapes
 - Modify any `.cls` file
 - Add skills or experience the user has not listed in their history
 - Change document structure (section names, section count) without asking
+
+## Phase 2: Form Filling
+
+### Before filling
+1. Open the application URL in Chrome
+2. Take a screenshot to confirm the page loaded correctly
+3. Scroll through the entire form before touching any field
+4. Note all required fields (marked with *)
+
+### Filling order
+1. Personal info → use `profile.yaml` personal section
+2. Work authorization → use `profile.yaml` work_authorization section
+3. Work history → use `profile.yaml` work_history (most recent first)
+4. Education → use `profile.yaml` education section
+5. Skills → use `profile.yaml` skills section
+6. Resume upload → locate `input[type="file"]` → upload `output/<Company>-<Role>/resume.pdf`
+7. Cover letter → if field present, follow Phase 2: Cover Letter section below
+8. Voluntary disclosures → use `profile.yaml` diversity section
+
+### Rules
+- Dropdowns: pick the closest matching option; if genuinely ambiguous, stop and ask
+- Required field with no profile.yaml match: STOP → take screenshot → ask user
+- Optional field with no match: leave blank
+- Multi-page forms: fill page → scroll to top to check for red errors → click Next
+
+### CAPTCHA
+If CAPTCHA detected (image challenge, checkbox, Cloudflare wall): STOP → take screenshot → tell user "CAPTCHA at [URL] — please solve it" → wait for user confirmation → continue
+
+### Submitting
+1. Take a full-page screenshot of the completed form
+2. Show user: "Ready to submit to [Company] for [Role]. Review the screenshot and type 'submit' to confirm."
+3. Submit ONLY after user explicitly confirms
+4. After submit: take screenshot of confirmation page → extract confirmation ID → update `jobs.yaml` entry: set status to `applied`, set applied_at, set confirmation_id
+
+## Phase 2: Cover Letter Generator
+
+When a form has a cover letter text field:
+1. Check the field for a character or word limit — if found, note it before writing
+2. Read the full job description and `profile.yaml`
+3. Write 3–4 paragraphs (~300 words unless a limit applies):
+   - Opening: one specific, genuine reason this company or role is interesting
+   - Body paragraph 1: most relevant experience with a concrete result or metric from work_history
+   - Body paragraph 2: second most relevant skill, project, or quality
+   - Closing: one sentence of enthusiasm + "I'd welcome the opportunity to discuss further"
+4. Tone: direct, specific, first person — no filler phrases ("I am writing to express my interest...")
+5. Never copy resume bullet points verbatim; add narrative context instead
+6. Never fabricate metrics, outcomes, or experiences not in profile.yaml
+
+## Phase 3: Job Board Scraping
+
+### Before starting
+1. Read `criteria.yaml` for search parameters
+2. Read `jobs.yaml` to get the list of already-seen companies+titles (for deduplication)
+
+### Search URLs
+Construct search URLs using criteria.yaml values (URL-encode spaces as `+`):
+
+- LinkedIn: `https://www.linkedin.com/jobs/search/?keywords=<title>&location=<location>&f_TPR=r2592000`
+- Indeed: `https://www.indeed.com/jobs?q=<title>+<keywords>&l=<location>&fromage=30`
+- Other boards: construct equivalent search URLs using the same title/location/date parameters
+
+### Per-listing behavior
+1. Wait 2–4 seconds (random) between page loads — vary the delay each time
+2. Scroll the page slowly for 1–2 seconds before clicking anything
+3. Extract from listing card: title, company, location, salary (if shown), URL
+4. Deduplication check: if an entry in `jobs.yaml` already has the same company + title, skip this listing
+5. Click into full listing → wait 1–2 seconds → extract full job description
+6. Write a new entry to `jobs.yaml` with status `seen`
+
+### Anti-bot rules
+- Maximum 25 listings per search session
+- After every 15 listings: pause 45–90 seconds before continuing
+- If redirected to a login page: STOP → ask user to log in manually → wait for confirmation
+- If CAPTCHA appears: STOP → take screenshot → ask user to solve manually
+- Never open more than 2 browser tabs at once
+
+### Matching and presenting to user
+After collecting all listings for the session:
+1. For each `seen` job, score against `criteria.yaml`:
+   - Title: does it match any of the target titles (exact or close)?
+   - Location: is it in preferred_locations, or does work_arrangement allow it?
+   - Salary: if shown, is it ≥ salary.minimum?
+2. Set matching jobs to status `matched` in `jobs.yaml`
+3. Present each matched job one at a time:
+   "**[Title]** at **[Company]** — [Location] — [Salary or 'not listed']
+   URL: [URL]
+   Apply? (yes / no / skip)"
+4. On `yes`: update status to `approved` → run Phase 1 for this job → run Phase 2 for this job
+5. On `no`: update status to `rejected`
+6. On `skip`: leave as `matched`, move to next
