@@ -20,7 +20,8 @@
   1. `git status` does not surface output/, any .pdf file, or sensitive YAML as tracked
   2. `output/` directory exists in the repo with a .gitkeep file
   3. `.claude/settings.json` contains a WebFetch permission entry that allows Claude to fetch URLs
-**Plans**: TBD
+**Plans**: 1 plan
+  - [ ] 01-01-PLAN.md — Wire .gitignore (output/, *.pdf), create tracked output/.gitkeep, and add .claude/settings.json WebFetch permission
 
 ### Phase 2: Resume Source and Data Files
 **Goal**: All source material and data files Claude needs to run the pipeline are present and correctly structured
@@ -48,9 +49,10 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Structure | 0/0 | Not started | - |
+| 1. Project Structure | 0/1 | Planned | - |
 | 2. Resume Source and Data Files | 0/0 | Not started | - |
 | 3. CLAUDE.md Playbooks | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-05-13 — Milestone v1.0 Foundation*
+*Phase 1 planned: 2026-05-13 — 1 plan, 2 tasks*
