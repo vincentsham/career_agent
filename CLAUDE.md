@@ -111,25 +111,9 @@ A 3-phase career agent that tailors resumes, fills job applications, and scrapes
 
 ## Phase 1: Resume Tailoring
 
-### Process
-1. Get job posting: if URL, fetch with WebFetch; if pasted text, use as-is
-2. Read resume source files from `resume/`
-3. Identify in the posting: required skills, preferred skills, keywords, role focus
-4. Tailor the resume:
-   - Rephrase bullet points to include keywords from the posting
-   - Reorder bullets within each role to put most relevant work first
-   - Update the professional summary to match the role
-   - Surface skills from work history that match the posting but aren't currently listed
-5. Compile: `cd resume && latexmk -pdf -interaction=nonstopmode *.tex`
-6. If compilation fails: run `grep -A3 "^!" resume/*.log` to find the error, fix it, retry
-7. Copy compiled PDF to: `output/<Company>-<Role>/resume.pdf`
-8. Commit: `git add output/<Company>-<Role>/resume.pdf resume/*.tex && git commit -m "[Company] [Role] - tailored resume"`
+**Trigger:** Any prompt about tailoring, writing, or updating a resume for a role or company — exact wording doesn't matter.
 
-### Guardrails — NEVER do these
-- Fabricate companies, titles, dates, metrics, technologies, or achievements
-- Modify any `.cls` file
-- Add skills or experience the user has not listed in their history
-- Change document structure (section names, section count) without asking
+**Instructions:** Read `docs/superpowers/specs/resume-tailoring-design.md` and follow it exactly. Read the file at the start of every Phase 1 run — do not rely on memory of its contents.
 
 ## Phase 2: Form Filling
 
