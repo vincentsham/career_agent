@@ -22,9 +22,6 @@ resume/*.blg
 *.log
 .logs/
 
-# Rendered PDF output (Phase 2 writes here)
-output/
-*.pdf
 # Output build artifacts
 output/*.aux
 output/*.log
