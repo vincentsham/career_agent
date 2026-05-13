@@ -71,16 +71,16 @@ Requirements for milestone v1.0. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SETUP-01 | Phase 1 | Pending |
-| SETUP-02 | Phase 1 | Pending |
-| SETUP-03 | Phase 1 | Pending |
-| RESUME-01 | Phase 2 | Pending |
-| DATA-01 | Phase 2 | Pending |
-| DATA-02 | Phase 2 | Pending |
-| DATA-03 | Phase 2 | Pending |
-| PLAY-01 | Phase 3 | Pending |
-| PLAY-02 | Phase 3 | Pending |
-| PLAY-03 | Phase 3 | Pending |
+| SETUP-01 | Phase 1: Project Structure | Pending |
+| SETUP-02 | Phase 1: Project Structure | Pending |
+| SETUP-03 | Phase 1: Project Structure | Pending |
+| RESUME-01 | Phase 2: Resume Source and Data Files | Pending |
+| DATA-01 | Phase 2: Resume Source and Data Files | Pending |
+| DATA-02 | Phase 2: Resume Source and Data Files | Pending |
+| DATA-03 | Phase 2: Resume Source and Data Files | Pending |
+| PLAY-01 | Phase 3: CLAUDE.md Playbooks | Pending |
+| PLAY-02 | Phase 3: CLAUDE.md Playbooks | Pending |
+| PLAY-03 | Phase 3: CLAUDE.md Playbooks | Pending |
 
 **Coverage:**
 - v1.0 requirements: 10 total
@@ -89,4 +89,4 @@ Requirements for milestone v1.0. Each maps to roadmap phases.
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 after initial definition*
+*Last updated: 2026-05-13 — traceability updated after roadmap creation*
