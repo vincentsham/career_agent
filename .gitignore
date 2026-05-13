@@ -1,0 +1,16 @@
+# Personal data — do not commit to public repo
+profile.yaml
+
+# LaTeX build artifacts
+resume/*.aux
+resume/*.log
+resume/*.fls
+resume/*.fdb_latexmk
+resume/*.synctex.gz
+resume/*.out
+resume/*.toc
+resume/*.bbl
+resume/*.blg
+
+# Machine-specific MCP config
+.mcp.json
