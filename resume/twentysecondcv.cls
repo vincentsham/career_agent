@@ -18,6 +18,7 @@
 \RequirePackage{pgffor}
 \RequirePackage{marvosym}
 \RequirePackage{parskip}
+\RequirePackage{enumitem}
 
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
 \ProcessOptions\relax
@@ -232,18 +233,18 @@
 
 % New environment for the long list
 \newenvironment{twenty}{%
-	\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ll}
+	\begin{itemize}[leftmargin=0pt, itemsep=10pt, parsep=0pt, label={}]
 }{%
-	\end{tabular*}
+	\end{itemize}
 }
 
 \newcommand{\twentyitem}[4]{%
-	#1&\hspace{0.2cm}\parbox[t]{0.78\textwidth}{%
-		\textbf{#2}%
-		\hfill%
-		{\footnotesize#3}\\%
-		#4\vspace{\parsep}%
-	}\\
+	\item \parbox[t]{0.18\textwidth}{#1} % Date Column
+	\hspace{0.2cm}
+	\parbox[t]{0.78\textwidth}{ % Content Column
+		\textbf{#2} \hfill {\footnotesize#3}\\
+		#4
+	}
 }
 
 %----------------------------------------------------------------------------------------

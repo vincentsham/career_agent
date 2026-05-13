@@ -78,13 +78,14 @@ The `.cls` lives in `resume/` but the tailored `.tex` is in `output/`. Use `TEXI
 
 ```bash
 cd output && TEXINPUTS=../resume: pdflatex -interaction=nonstopmode resume_<company>_<role>.tex
+rm -f output/resume_<company>_<role>.{aux,log,out,fls,fdb_latexmk,synctex.gz}
 ```
 
 Use `pdflatex` directly (not `latexmk`) — a resume needs only one pass and `latexmk` will auto-rerun unnecessarily when cross-references change.
 
-If compilation fails, run `grep -A3 "^!" resume_<company>_<role>.log` to find the error, fix the `.tex`, and retry.
+If compilation fails, run `grep -A3 "^!" output/resume_<company>_<role>.log` to find the error, fix the `.tex`, and retry. Delete the log after fixing.
 
-Build artifacts in output/ are covered by .gitignore — no cleanup needed.
+After a successful compile, `output/` contains only `.tex` and `.pdf` files.
 
 ---
 
