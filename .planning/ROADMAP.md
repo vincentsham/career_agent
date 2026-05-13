@@ -21,7 +21,7 @@
   2. `output/` directory exists in the repo with a .gitkeep file
   3. `.claude/settings.json` contains a WebFetch permission entry that allows Claude to fetch URLs
 **Plans**: 1 plan
-  - [ ] 01-01-PLAN.md — Wire .gitignore (output/, *.pdf), create tracked output/.gitkeep, and add .claude/settings.json WebFetch permission
+  - [x] 01-01-PLAN.md — Wire .gitignore (output/, *.pdf), create tracked output/.gitkeep, and add .claude/settings.json WebFetch permission
 
 ### Phase 2: Resume Source and Data Files
 **Goal**: All source material and data files Claude needs to run the pipeline are present and correctly structured
