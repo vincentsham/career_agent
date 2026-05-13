@@ -1,5 +1,19 @@
 # Career Agent
 
+## Current Milestone: v1.0 Foundation
+
+**Goal:** Set up all data files, project structure, and CLAUDE.md playbooks needed for the three-phase career agent pipeline.
+
+**Target features:**
+- Project structure (.gitignore, output/ dir, WebFetch permission)
+- LaTeX resume source files in resume/
+- profile.yaml with form-first schema and placeholder values
+- criteria.yaml with job search filter schema
+- jobs.yaml initialized as application state store
+- CLAUDE.md Phase 1 playbook: resume tailoring guardrails
+- CLAUDE.md Phase 2 playbook: form-filling + cover letter generator
+- CLAUDE.md Phase 3 playbook: job board scraping instructions
+
 ## What This Is
 
 A personal AI agent that automates the job search pipeline. Given a job posting (URL or pasted text), it tailors a LaTeX resume to the role, compiles it to PDF, fills the online application form using personal profile data, and — in fully autonomous mode — scrapes LinkedIn, Indeed, and other job boards to find matching roles and trigger the full pipeline with user approval at each step.
@@ -104,4 +118,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-13 after initialization*
+*Last updated: 2026-05-13 — Milestone v1.0 Foundation started*
