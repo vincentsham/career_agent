@@ -1,0 +1,21 @@
+# jobs.yaml — Application state store
+# Managed automatically by Phase 3. Do not edit manually during a session.
+#
+# Statuses: seen | matched | approved | applied | rejected
+#
+# Schema for each entry (auto-populated by Phase 3):
+# - id: "<company>-<title>-<hash>"     # deduplication key
+#   title: ""
+#   company: ""
+#   url: ""
+#   board: ""                           # linkedin, indeed, etc.
+#   location: ""
+#   salary: ""                          # as shown on listing, or ""
+#   status: "seen"
+#   seen_at: ""                         # ISO 8601 datetime
+#   applied_at: ""                      # ISO 8601 datetime, or null
+#   resume_path: ""                     # path to tailored PDF, or ""
+#   confirmation_id: ""                 # application confirmation ID, or ""
+#   notes: ""
+
+jobs: []

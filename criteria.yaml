@@ -1,0 +1,43 @@
+# criteria.yaml — Job search filters for Phase 3
+
+search:
+  titles:
+    - "AI Engineer"
+    - "Data Scientist"
+    - "ML Engineer"
+    - "Machine Learning Engineer"
+    - "Senior AI Engineer"
+    - "Senior Data Scientist"
+    - "Senior ML Engineer"
+  keywords:
+    - "Python"
+    - "LLM"
+    - "RAG"
+    - "LangChain"
+    - "LangGraph"
+    - "PyTorch"
+  locations:
+    - "Toronto, ON"
+  work_arrangement:
+    - "remote"
+    - "hybrid"
+    - "onsite"
+
+salary:
+  minimum: 80000
+  currency: "CAD"
+
+experience_level:
+  - "entry"
+  - "junior"
+  - "mid"
+  - "senior"
+  # Options: entry, junior, mid, senior, staff, principal
+
+date_posted_days: 30   # Only jobs posted within this many days
+
+companies:
+  exclude: []          # Companies to never apply to
+  prefer: []           # Companies to prioritize (optional)
+
+easy_apply_only: false # true = only scrape LinkedIn Easy Apply jobs
