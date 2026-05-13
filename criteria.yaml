@@ -18,7 +18,10 @@ search:
     - "PyTorch"
   locations:
     - "Toronto, ON"
-  include_remote: true
+  work_arrangement:
+    - "remote"
+    - "hybrid"
+    - "onsite"
 
 salary:
   minimum: 80000
