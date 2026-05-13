@@ -16,7 +16,7 @@
 |---|---|
 | `.claude/settings.json` | Grant WebFetch permission |
 | `.gitignore` | Exclude LaTeX build artifacts; keep PDFs |
-| `resume/` | LaTeX source files (.tex, .sty) |
+| `resume/` | LaTeX source files (.tex, .cls) |
 | `output/` | Compiled PDFs, one subdirectory per application |
 | `profile.yaml` | Form-first personal data (Phase 2 + 3) |
 | `criteria.yaml` | Job search filters (Phase 3) |
@@ -109,18 +109,18 @@ git commit -m "chore: project structure, gitignore, and WebFetch permission"
 
 **Files:**
 - Create: `resume/<your-resume>.tex`
-- Create: `resume/<your-style>.sty`
+- Create: `resume/<your-style>.cls`
 
-- [ ] **Step 1: Copy your .tex and .sty files into resume/**
+- [ ] **Step 1: Copy your .tex and .cls files into resume/**
 
 Replace the paths below with your actual file locations:
 
 ```bash
 cp /path/to/your/resume.tex resume/
-cp /path/to/your/resume.sty resume/
+cp /path/to/your/resume.cls resume/
 ```
 
-Expected: `ls resume/` shows your .tex and .sty files (plus .gitkeep).
+Expected: `ls resume/` shows your .tex and .cls files (plus .gitkeep).
 
 - [ ] **Step 2: Test compilation**
 
@@ -149,7 +149,7 @@ Expected: At least one `.pdf` file listed with a non-zero size.
 cd resume && latexmk -C
 ```
 
-Expected: Cleans build artifacts. `ls resume/` shows only .tex, .sty, .gitkeep.
+Expected: Cleans build artifacts. `ls resume/` shows only .tex, .cls, .gitkeep.
 
 - [ ] **Step 5: Commit**
 
@@ -436,7 +436,7 @@ Add the following to the end of `CLAUDE.md`:
 
 ### Guardrails — NEVER do these
 - Fabricate companies, titles, dates, metrics, technologies, or achievements
-- Modify any `.sty` file
+- Modify any `.cls` file
 - Add skills or experience the user has not listed in their history
 - Change document structure (section names, section count) without asking
 ```

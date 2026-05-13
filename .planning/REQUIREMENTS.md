@@ -15,7 +15,7 @@ Requirements for milestone v1.0. Each maps to roadmap phases.
 
 ### Resume Source
 
-- [ ] **RESUME-01**: LaTeX resume source files (.tex and .sty) are present in resume/ directory
+- [ ] **RESUME-01**: LaTeX resume source files (.tex and .cls) are present in resume/ directory
 
 ### Data Files
 
@@ -65,7 +65,7 @@ Requirements for milestone v1.0. Each maps to roadmap phases.
 | Paid scraping APIs (Apify, ScrapingBee) | Chrome MCP with human-like timing only |
 | Playwright/Puppeteer | Fingerprinted too easily; using Chrome DevTools MCP |
 | Automatic submission without user confirmation | Always pause-and-confirm |
-| Parsing or modifying .sty files | Never touched by automation |
+| Parsing or modifying .cls files | Never touched by automation |
 
 ## Traceability
 

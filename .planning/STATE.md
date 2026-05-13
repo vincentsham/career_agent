@@ -50,7 +50,7 @@ Plans total: 0
 - Claude Code is the sole orchestrator — no runner scripts or daemons
 - Chrome DevTools MCP for automation; Claude in Chrome for page context
 - File-based state (YAML only) — no database
-- .sty file is never modified by automation
+- .cls file is never modified by automation
 - Never submit a form without explicit user confirmation
 
 ### Blockers
@@ -60,7 +60,7 @@ None.
 ### Notes
 
 - This milestone is "no-code" — all deliverables are YAML files and CLAUDE.md additions
-- LaTeX resume source (.tex + .sty) exists locally but is not yet in the repo — Phase 2 copies it to resume/
+- LaTeX resume source (.tex + .cls) exists locally but is not yet in the repo — Phase 2 copies it to resume/
 - profile.yaml must use a form-first schema (fields job applications ask for, not resume fields)
 
 ## Session Continuity

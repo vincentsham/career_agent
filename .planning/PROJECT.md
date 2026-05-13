@@ -69,11 +69,11 @@ Eliminate the manual, repetitive work of applying to jobs while keeping the huma
 - Paid scraping APIs (Apify, ScrapingBee) — Chrome MCP with human-like timing only
 - Playwright/Puppeteer — fingerprinted too easily; using Chrome DevTools MCP
 - Automatic submission without user confirmation — always pause-and-confirm
-- Parsing or modifying `.sty` files — never touched by automation
+- Parsing or modifying `.cls` files — never touched by automation
 
 ## Context
 
-- Resume exists as LaTeX source (.tex + .sty) — not yet in the repo; will be copied to `resume/`
+- Resume exists as LaTeX source (.tex + .cls) — not yet in the repo; will be copied to `resume/`
 - `profile.yaml` doesn't exist yet and must be built from scratch using a form-first schema (what job applications ask for, not what the resume contains)
 - Chrome DevTools MCP (programmatic CDP control) and Claude in Chrome (page-aware extension) are both available and serve different roles — CDP for automation, extension for context
 - LinkedIn and Indeed are primary scraping targets; both have aggressive bot detection requiring human-like behavior

@@ -89,7 +89,7 @@ A 3-phase career agent that tailors resumes, fills job applications, and scrapes
 - `profile.yaml` → form-first personal data (work auth, visa, salary, start date, etc.)
 - `criteria.yaml` → job search filters (title, keywords, location, salary range)
 - `jobs.yaml` → state store tracking seen/matched/applied jobs
-- `resume/` → LaTeX source files (.tex and .sty)
+- `resume/` → LaTeX source files (.tex and .cls)
 - `output/` → rendered PDFs per application
 
 ### Tools Available
@@ -103,7 +103,7 @@ A 3-phase career agent that tailors resumes, fills job applications, and scrapes
 ### Critical Rules
 - Never submit a form without explicit user confirmation
 - Always pause at CAPTCHAs for manual solving
-- Never modify .sty file unless explicitly asked
+- Never modify .cls file unless explicitly asked
 - Never fabricate experience or skills in resume tailoring
 - One git commit per tailored resume with job title and company in commit message
 - Always verify PDF compiles cleanly before Phase 1 is complete

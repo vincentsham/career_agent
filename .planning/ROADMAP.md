@@ -28,7 +28,7 @@
 **Depends on**: Phase 1
 **Requirements**: RESUME-01, DATA-01, DATA-02, DATA-03
 **Success Criteria** (what must be TRUE):
-  1. `resume/` contains a .tex file and a .sty file that compile without errors via `latexmk`
+  1. `resume/` contains a .tex file and a .cls file that compile without errors via `latexmk`
   2. `profile.yaml` exists with labeled placeholder values for every field job applications ask for (name, email, phone, address, work auth, visa, salary, remote pref, start date, LinkedIn, GitHub)
   3. `criteria.yaml` exists with all job search filter fields present (title keywords, location, salary min/max, job type, company blacklist, required skills)
   4. `jobs.yaml` exists, is initialized empty, and has schema documented in comments
