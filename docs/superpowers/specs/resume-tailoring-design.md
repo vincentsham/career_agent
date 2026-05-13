@@ -42,7 +42,7 @@ Input: job posting URL or pasted text
   Show: diff -u resume/resume.tex output/resume_<company>_<role>.tex
   Wait: user chooses compile / edit / discard
   │
-  ├─ compile → latexmk → output/resume_<company>_<role>.pdf → git commit
+  ├─ compile → pdflatex (single pass) → output/resume_<company>_<role>.pdf → git commit
   ├─ edit    → user edits .tex manually → re-show diff (loop back)
   └─ discard → delete output/resume_<company>_<role>.tex → done
 ```
@@ -77,20 +77,14 @@ Lowercase, spaces → underscores, punctuation stripped.
 The `.cls` lives in `resume/` but the tailored `.tex` is in `output/`. Use `TEXINPUTS` to bridge them:
 
 ```bash
-cd output && TEXINPUTS=../resume: latexmk -pdf -interaction=nonstopmode resume_<company>_<role>.tex
+cd output && TEXINPUTS=../resume: pdflatex -interaction=nonstopmode resume_<company>_<role>.tex
 ```
 
-If compilation fails, run `grep -A3 "^!" output/*.log` to find the error, fix the `.tex`, and retry.
+Use `pdflatex` directly (not `latexmk`) — a resume needs only one pass and `latexmk` will auto-rerun unnecessarily when cross-references change.
 
-After successful compilation, clean build artifacts:
+If compilation fails, run `grep -A3 "^!" resume_<company>_<role>.log` to find the error, fix the `.tex`, and retry.
 
-```bash
-cd output && latexmk -C resume_<company>_<role>.tex
-```
-
-This removes `.aux`, `.log`, `.fls`, etc. from `output/`, leaving only the `.tex` and `.pdf`.
-
-> **Note for implementation:** `.gitignore` currently only covers `resume/*.aux`, `resume/*.log`, etc. It must be extended to also cover `output/*.aux`, `output/*.log`, `output/*.fls`, `output/*.fdb_latexmk`, `output/*.synctex.gz` — otherwise build artifacts from `output/` will appear as untracked files.
+Build artifacts in output/ are covered by .gitignore — no cleanup needed.
 
 ---
 
