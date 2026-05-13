@@ -25,3 +25,9 @@ resume/*.blg
 # Rendered PDF output (Phase 2 writes here)
 output/
 *.pdf
+# Output build artifacts
+output/*.aux
+output/*.log
+output/*.fls
+output/*.fdb_latexmk
+output/*.synctex.gz
