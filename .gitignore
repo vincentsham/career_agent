@@ -14,3 +14,11 @@ resume/*.blg
 
 # Machine-specific MCP config
 .mcp.json
+
+# Log files
+*.log
+.logs/
+
+# Rendered PDF output (Phase 2 writes here)
+output/
+*.pdf
