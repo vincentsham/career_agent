@@ -9,25 +9,25 @@ Requirements for milestone v1.0. Each maps to roadmap phases.
 
 ### Project Setup
 
-- [ ] **SETUP-01**: .gitignore excludes output/, *.pdf, and any sensitive YAML from version control
-- [ ] **SETUP-02**: output/ directory exists with .gitkeep so git tracks the directory structure
-- [ ] **SETUP-03**: WebFetch MCP permission is configured in .claude/settings.json
+- [x] **SETUP-01**: .gitignore excludes output/, *.pdf, and any sensitive YAML from version control
+- [x] **SETUP-02**: output/ directory exists with .gitkeep so git tracks the directory structure
+- [x] **SETUP-03**: WebFetch MCP permission is configured in .claude/settings.json
 
 ### Resume Source
 
-- [ ] **RESUME-01**: LaTeX resume source files (.tex and .cls) are present in resume/ directory
+- [x] **RESUME-01**: LaTeX resume source files (.tex and .cls) are present in resume/ directory
 
 ### Data Files
 
-- [ ] **DATA-01**: profile.yaml exists with form-first schema and placeholder values for all fields job applications ask for (name, email, phone, address, work authorization, visa status, salary expectation, remote preference, start date, LinkedIn URL, GitHub URL)
-- [ ] **DATA-02**: criteria.yaml exists with job search filter schema (title keywords, location, salary min/max, job type, company blacklist, required skills)
-- [ ] **DATA-03**: jobs.yaml exists as an initialized-empty application state store with schema documented in comments (id, company, role, url, status, applied_date, confirmation_id)
+- [x] **DATA-01**: profile.yaml exists with form-first schema and placeholder values for all fields job applications ask for (name, email, phone, address, work authorization, visa status, salary expectation, remote preference, start date, LinkedIn URL, GitHub URL)
+- [x] **DATA-02**: criteria.yaml exists with job search filter schema (title keywords, location, salary min/max, job type, company blacklist, required skills)
+- [x] **DATA-03**: jobs.yaml exists as an initialized-empty application state store with schema documented in comments (id, company, role, url, status, applied_date, confirmation_id)
 
 ### CLAUDE.md Playbooks
 
-- [ ] **PLAY-01**: Phase 1 resume tailoring playbook is in CLAUDE.md — keyword extraction rules, no-fabrication guardrail, latexmk compile verification, git commit format ([Company] [Role] - tailored resume)
-- [ ] **PLAY-02**: Phase 2 form-filling playbook is in CLAUDE.md — profile.yaml field mapping, CAPTCHA pause behavior, screenshot-before-submit confirmation, cover letter generation when field present
-- [ ] **PLAY-03**: Phase 3 job board scraping playbook is in CLAUDE.md — criteria.yaml usage, deduplication against jobs.yaml, scoring against criteria, pause-and-confirm before triggering Phase 1+2
+- [x] **PLAY-01**: Phase 1 resume tailoring playbook is in CLAUDE.md — keyword extraction rules, no-fabrication guardrail, latexmk compile verification, git commit format ([Company] [Role] - tailored resume)
+- [x] **PLAY-02**: Phase 2 form-filling playbook is in CLAUDE.md — profile.yaml field mapping, CAPTCHA pause behavior, screenshot-before-submit confirmation, cover letter generation when field present
+- [x] **PLAY-03**: Phase 3 job board scraping playbook is in CLAUDE.md — criteria.yaml usage, deduplication against jobs.yaml, scoring against criteria, pause-and-confirm before triggering Phase 1+2
 
 ## Future Requirements
 
@@ -71,16 +71,16 @@ Requirements for milestone v1.0. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SETUP-01 | Phase 1: Project Structure | Pending |
-| SETUP-02 | Phase 1: Project Structure | Pending |
-| SETUP-03 | Phase 1: Project Structure | Pending |
-| RESUME-01 | Phase 2: Resume Source and Data Files | Pending |
-| DATA-01 | Phase 2: Resume Source and Data Files | Pending |
-| DATA-02 | Phase 2: Resume Source and Data Files | Pending |
-| DATA-03 | Phase 2: Resume Source and Data Files | Pending |
-| PLAY-01 | Phase 3: CLAUDE.md Playbooks | Pending |
-| PLAY-02 | Phase 3: CLAUDE.md Playbooks | Pending |
-| PLAY-03 | Phase 3: CLAUDE.md Playbooks | Pending |
+| SETUP-01 | Phase 1: Project Structure | Complete |
+| SETUP-02 | Phase 1: Project Structure | Complete |
+| SETUP-03 | Phase 1: Project Structure | Complete |
+| RESUME-01 | Phase 2: Resume Source and Data Files | Complete |
+| DATA-01 | Phase 2: Resume Source and Data Files | Complete |
+| DATA-02 | Phase 2: Resume Source and Data Files | Complete |
+| DATA-03 | Phase 2: Resume Source and Data Files | Complete |
+| PLAY-01 | Phase 3: CLAUDE.md Playbooks | Complete |
+| PLAY-02 | Phase 3: CLAUDE.md Playbooks | Complete |
+| PLAY-03 | Phase 3: CLAUDE.md Playbooks | Complete |
 
 **Coverage:**
 - v1.0 requirements: 10 total
