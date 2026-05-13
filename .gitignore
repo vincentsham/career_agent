@@ -12,6 +12,9 @@ resume/*.toc
 resume/*.bbl
 resume/*.blg
 
+# macOS metadata
+.DS_Store
+
 # Machine-specific MCP config
 .mcp.json
 
