@@ -17,9 +17,8 @@ Claude Code acts as the sole orchestrator. No separate runner script. Custom ski
 |---|---|---|
 | Compile LaTeX → PDF | `latexmk` | Phase 1 |
 | Version control tailored resumes | `gh` | Phase 1 |
-| Read .tex / .cls / YAML files | `filesystem MCP` | All |
-| Programmatic browser control (click, fill, navigate, screenshot) | `Chrome DevTools MCP` — connects to Chrome via CDP; drives the browser as code | Phase 2, 3 |
-| Page-aware browsing (read page context, interact conversationally) | `Claude in Chrome` — Claude extension running inside Chrome; sees the active tab | Phase 2, 3 |
+| Read .tex / .cls / YAML files | Claude Code native `Read` tool | All |
+| Programmatic browser control (click, fill, navigate, screenshot) | `Playwright MCP` — `@playwright/mcp` with `--user-data-dir ./job_search_profile --headed`; persists login sessions across runs | Phase 2, 3 |
 | Fetch job posting from URL | `WebFetch` (Claude Code built-in) | Phase 1, 3 |
 | AI tailoring, matching, form mapping | Claude Code itself | All |
 | Live library docs | `context7 MCP` | As needed |
@@ -31,7 +30,8 @@ Claude Code acts as the sole orchestrator. No separate runner script. Custom ski
 | Skill | Action |
 |---|---|
 | Allow `WebFetch` in permissions | Add to `.claude/settings.json` |
-| Chrome logged in to job boards | One-time manual login per board (LinkedIn, Indeed, others as needed), keep sessions alive |
+| Playwright MCP permissions | Add `mcp__playwright__browser_*` entries to `.claude/settings.local.json` |
+| Log in to job boards via Playwright | One-time manual login per board (LinkedIn, Indeed) — sessions persist in `./job_search_profile` user data dir |
 
 ---
 

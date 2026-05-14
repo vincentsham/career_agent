@@ -48,7 +48,7 @@ Plans total: 3
 ### Key Decisions
 
 - Claude Code is the sole orchestrator — no runner scripts or daemons
-- Chrome DevTools MCP for automation; Claude in Chrome for page context
+- Playwright MCP for browser automation (Phase 2, 3) — configured with `--user-data-dir ./job_search_profile --headed`
 - File-based state (YAML only) — no database
 - .cls file is never modified by automation
 - Never submit a form without explicit user confirmation
