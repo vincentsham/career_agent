@@ -186,7 +186,49 @@ After submission:
 
 ---
 
-## Stage 6: Self-Learning
+## Stage 6: Run Logging
+
+After every run (success or failure), write an execution trace to `logs/form-filling/`.
+
+**File path:** `logs/form-filling/<company>_<role>_<YYYY-MM-DD>.yaml`
+
+**What to log — execution trace only, no field values:**
+
+```yaml
+run:
+  company: <company>
+  role: <role>
+  ats: <detected ATS>
+  date: <YYYY-MM-DD>
+
+pages:
+  - id: <page number>
+    title: <page title>
+    playbook_matched: true | partial | false
+    procedures:
+      - field: <field label>
+        widget: <widget type>
+        commands: [<commands used in order>]
+    errors:
+      - field: <field label>
+        type: <error type>
+        recovery: <what fixed it>
+    delta_fields:
+      - label: <field label>
+        type: <field type>
+```
+
+Rules:
+- Log every run — do not skip failed runs (failures are the most useful for pattern analysis)
+- Omit pages where `playbook_matched: true`, `errors` is empty, and `delta_fields` is empty — they add no signal
+- Never record values filled into fields — those come from `profile.yaml` and are irrelevant to pattern analysis
+- `commands` entries describe the Playwright calls used (e.g. `browser_evaluate(scrollTop=2800)`, `browser_snapshot(scoped)`) — not the data passed to them
+
+**Purpose:** Accumulating logs across multiple runs reveals which widgets appear consistently, which errors recur, and which custom fields different ATS instances add — all actionable improvements to the playbooks below.
+
+---
+
+## Stage 7: Self-Learning
 
 After each fully captured application, Claude reviews what it encountered. If any new ATS, field type, or workaround was needed that is not already in this spec, it appends to the appropriate playbook section or Learned Patterns below.
 
