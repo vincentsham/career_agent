@@ -1,6 +1,7 @@
 # Phase 2: Form Filling Design
 
 **Date:** 2026-05-14
+**Updated:** 2026-05-15
 **Status:** Active
 
 ---
@@ -21,8 +22,16 @@ Phase 2 fills job application forms using `profile.yaml` as the data source and 
 [Claude: detect which open tabs are job application forms]
         ↓
 [For each target tab:]
-  Scan page → Plan field map → Fill page → Next/Continue
-       ↑_____________re-scan after each page transition___|
+  Detect ATS from URL
+        ↓
+  Known ATS? ──yes──→ Load playbook → Execute known fields (scoped snapshots)
+      │                                       ↓
+      │                              Delta-scan: find unfilled/unknown fields
+      │                                       ↓
+      no                             Fill unknowns via standard Plan → Fill
+      ↓                                       ↓
+  Scan page → Plan field map → Fill page    Next/Continue
+       ↑___________re-scan after each page transition___|
         ↓
   [Submit page reached → notify user in prompt → wait for "submit"]
         ↓
@@ -56,9 +65,37 @@ Claude infers intent from any natural prompt — exact wording is not required:
 
 ---
 
+## ATS Playbook System
+
+### How it works
+
+Before starting any page, Claude checks the tab URL against known ATS patterns. If a match is found, Claude uses a playbook instead of reasoning from scratch:
+
+1. **Execute playbook steps** for all known fields on this page — no inventory scan, no field-by-field reasoning
+2. **Delta-scan**: take one scoped snapshot after executing the playbook steps — find any fields that are unfilled or not covered by the playbook
+3. **Fill unknowns** using standard Plan → Fill logic for those fields only
+4. Click Next/Continue
+
+For unknown ATSes, or any page with no playbook entry, the standard Scan → Plan → Fill loop runs unchanged.
+
+### Why this helps
+
+- Known fields are executed straight through with scoped (not full-page) snapshots — token cost drops significantly
+- The delta-scan catches company-specific custom fields that differ between Workday instances
+- Playbooks are flexible by design: they cover what's predictably always there, not every possible variation
+
+### Extending playbooks
+
+When a new ATS or a novel page pattern is encountered:
+- Fill using the standard Scan → Plan → Fill loop
+- After the run completes, add the observed pattern to the appropriate playbook section below
+- Keep playbook entries concise — field label, source, widget type, and any non-obvious notes
+
+---
+
 ## Stage 1: Reconnaissance (Scan)
 
-At the start of each page, Claude:
+For **unknown ATSes only** (no playbook match):
 
 1. Takes a snapshot of the current page state via Playwright
 2. Inventories all visible form fields: label text, field type, required status (`*`)
@@ -106,6 +143,22 @@ After filling all fields on the current page, Claude clicks Next/Continue and re
 
 ---
 
+## Snapshot Discipline
+
+Snapshots are expensive — Workday accessibility trees are large. Follow this budget strictly:
+
+| When | Action |
+|---|---|
+| Page start (Scan) | One full snapshot — inventory all fields |
+| During fill — plain text, textarea, radio, checkbox | No snapshot — trust the fill, continue |
+| During fill — typeahead or file upload | One scoped snapshot after the interaction to confirm selection |
+| Before clicking Next/Continue | One snapshot to verify complex fields are set correctly |
+| Stale ref recovery | Snapshot the **nearest stable container** (section div), not the full page |
+
+**Never re-snapshot just to find the next field.** Plan the full field order from the initial scan and execute it straight through.
+
+---
+
 ## Stage 4: Confirmation & Submission
 
 When the submit button is reached:
@@ -135,7 +188,7 @@ After submission:
 
 ## Stage 6: Self-Learning
 
-After each fully captured application, Claude reviews what it encountered. If any new field type, ATS behavior, or workaround was needed that is not already in this spec, it appends to the Learned Patterns section below.
+After each fully captured application, Claude reviews what it encountered. If any new ATS, field type, or workaround was needed that is not already in this spec, it appends to the appropriate playbook section or Learned Patterns below.
 
 Rules:
 - Write only after `jobs.yaml` is updated (run fully captured)
@@ -144,9 +197,175 @@ Rules:
 
 ---
 
+## Workday Playbook
+
+### Detection
+
+URL matches any of: `*.workday.com`, `*.myworkdayjobs.com`, `wd*.myworkday.com`
+
+### Pre-flight (run once before Page 1)
+
+1. **Declare skip list**: Skills, Certifications, and Languages sections are skipped by default. Do not explore them.
+2. **Check `profile.yaml` completeness**: Verify that `diversity.gender`, `diversity.ethnicity`, `diversity.disability_status`, and `how_did_you_hear_about_us` are populated. Flag any gaps to the user before starting — a mid-session pause is more disruptive than an upfront question.
+3. **Identify the resume file**: Check `output/` for `resume_<company>_<role>.pdf`. If not found, use `resume/resume.pdf`. Resolve this before Page 2 (My Experience), not during.
+
+### Widget Library
+
+**`custom-listbox`** — Workday province/state and degree dropdowns are custom listboxes, not native `<select>` elements. `browser_select_option` will fail. Procedure:
+1. Click the container to open it
+2. Take a scoped snapshot of the expanded listbox to get option refs
+3. Click the matching option ref directly with `browser_click`
+
+**`virtual-list`** — Workday's Field of Study uses a virtualised list. Typing does NOT filter it. Procedure:
+1. Click the typeahead container to open it (state shows `Expanded`)
+2. Use `browser_evaluate` to scroll the list's scrollable parent:
+   ```js
+   () => {
+     const listbox = document.querySelector('[role="listbox"][aria-label="Options Expanded"]');
+     const scrollable = listbox.closest('[style*="overflow"]') || listbox.parentElement;
+     scrollable.scrollTop = <N>;
+     return `scrollTop: ${scrollable.scrollTop}`;
+   }
+   ```
+3. Take a scoped snapshot of `role=listbox[name="Options Expanded"]` to see visible options
+4. If target not visible, adjust `scrollTop` and re-snapshot
+5. Click the option ref with `browser_click` — JS `.click()` does **not** register in Workday
+6. Confirm: container should show `1 item selected, <value>`
+
+Approximate scrollTop values (Manulife Workday): A=0, B=1500–2000, C=2800, binary search 0–6000 for other letters.
+
+---
+
+### Page 1 — My Information
+
+Snapshot scope: full page (small)
+
+| Field | Source | Widget |
+|---|---|---|
+| First Name | `personal.first_name` | text |
+| Last Name | `personal.last_name` | text |
+| Address Line 1 | `personal.address.street` | text |
+| City | `personal.address.city` | text |
+| State/Province | `personal.address.state` (e.g. "ON" → "Ontario") | `custom-listbox` |
+| Postal Code | `personal.address.zip` | text |
+| Country | `personal.address.country` | `custom-listbox` or pre-filled |
+| Phone | `personal.phone` | text |
+| Email | `personal.email` | text (verify if pre-filled) |
+| How did you hear? | `how_did_you_hear_about_us.[source]` | radio or dropdown |
+| Previously employed here? | No | radio |
+
+Delta-scan after: catch any company-specific additions (e.g. middle name, preferred name, gender pronoun).
+
+---
+
+### Page 2 — My Experience
+
+Snapshot scope: scoped containers only — never full page.
+- Resume section: `role=group[name="Resume"]`
+- Work entries: `role=group[name="Work Experience N"]` (where N is the entry number)
+- Education entries: `role=group[name="Education N"]`
+
+**Step 1 — Resume upload**
+- File path from pre-flight
+- Widget: `browser_file_upload`
+
+**Step 2 — LinkedIn URL**
+- Source: `personal.linkedin`
+- Widget: text
+
+**Step 3 — Work Experience** (repeat for each entry in `work_history`, in order)
+
+| Field | Source | Widget |
+|---|---|---|
+| Job Title | `title` | text |
+| Company | `company` | text |
+| Location | `location` | text |
+| Start Month | month part of `start_date` | dropdown |
+| Start Year | year part of `start_date` | text |
+| End Month | month part of `end_date` (or check "I currently work here") | dropdown / checkbox |
+| End Year | year part of `end_date` | text |
+| Description | `description` | textarea |
+
+After each entry: click "Add Another Work Experience", take scoped snapshot on `role=group[name="Work Experience N"]` for fresh refs before filling the next entry.
+
+**Step 4 — Education** (repeat for each entry in `education`, in order)
+
+| Field | Source | Widget | Notes |
+|---|---|---|---|
+| School | `school` | text | |
+| Degree | `degree` | `custom-listbox` | Map: MSc → "Master of Science", HBSc → "Bachelor of Science" |
+| Field of Study | `field` | `virtual-list` | Use JS scroll method |
+| Start Year | `start_year` | text | |
+| End Year | `end_year` | text | |
+| GPA | `gpa` | text | Only if field is shown |
+
+After each entry: click "Add Another Education", take scoped snapshot on `role=group[name="Education N"]` for fresh refs.
+
+**Step 5 — Skip list**
+Skills → SKIP. Certifications → SKIP. Languages → SKIP.
+
+Delta-scan after: catch custom fields (e.g. portfolio URL, cover letter upload, open-ended text questions placed on this page).
+
+---
+
+### Page 3 — Application Questions
+
+This page is company-specific. The playbook covers common question patterns only — execute these, then delta-scan for anything else.
+
+| Question pattern | Answer | Source |
+|---|---|---|
+| Non-compete / restrictive covenant agreement | No | — |
+| Legally authorized to work in [country] | Yes | `work_authorization.authorized` |
+| Require visa sponsorship | No | `work_authorization.requires_sponsorship` |
+| Relatives or connections at the company | No | — |
+| Eligible to work in Canada / UK | Yes | — |
+| Financial licenses or registrations | No | — |
+| Compensation expectation | `"$[salary_min] – $[salary_max] [currency]"` | `compensation.salary_min/max/currency` |
+| Prior relationship with / history at [company] | Not Applicable | — |
+
+Delta-scan after: fill any unanswered questions using standard Plan → Fill.
+
+---
+
+### Page 4 — Voluntary Disclosures
+
+Snapshot scope: full page (short)
+
+| Field | Source | Widget |
+|---|---|---|
+| Gender | `diversity.gender` | radio or dropdown |
+| Race / Ethnicity | `diversity.ethnicity` | radio or dropdown |
+| Disability | `diversity.disability_status` → "No (Canada)" | typeahead |
+| Terms & Conditions | always check | checkbox |
+
+If gender/ethnicity fields are blank in `profile.yaml`, select "I do not wish to disclose" — do not stop and ask unless the field has no opt-out option.
+
+Delta-scan after: catch any additional voluntary fields (veteran status, LGBTQ2+, etc.).
+
+---
+
+### Page 5 — Review
+
+No fields. Verify the form is complete, then notify the user:
+> "Form filled for **[Company] — [Role]**. Review it in the browser and type 'submit' to confirm."
+
+---
+
 ## Learned Patterns
 
-*(This section grows over time as Phase 2 runs encounter new behaviors.)*
+Use this section for new ATS behaviors and workarounds that don't yet have a full playbook. Once enough patterns accumulate for an ATS, graduate them into a named playbook section.
+
+### "How Did You Hear About Us?" — infer from source
+
+Map the job source to the answer:
+- Applied via Indeed → **"Indeed"**
+- Applied via LinkedIn → **"LinkedIn"**
+
+Source is stored in `profile.yaml` under `how_did_you_hear_about_us`.
+
+### Workday: Skills typeahead does not list programming languages
+
+Common skills like "Python", "SQL" return "No Items." in Workday's skill catalogue. Skip the Skills section unless the ATS has a known compatible list. Do not waste cycles searching.
 
 ---
 
