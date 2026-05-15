@@ -49,10 +49,10 @@ Use the opened window to log into job boards (LinkedIn, Workday, RBC, etc.) manu
 
 ## Trigger Modes
 
-Claude accepts two hand-over commands:
+Claude infers intent from any natural prompt — exact wording is not required:
 
-- **Batch**: "apply to all open application tabs" — Claude queues every tab it identifies as a job application form
-- **Specific**: "apply to the [Company] tab" — Claude focuses on that one tab only
+- **Batch**: any prompt meaning "do all of them" (e.g. "apply to all tabs", "submit everything open", "go through all the forms") — Claude queues every tab it identifies as a job application form
+- **Specific**: any prompt naming a company or tab (e.g. "do the RBC one", "apply to Shopify", "fill the form I have open") — Claude focuses on that tab only
 
 ---
 
@@ -126,7 +126,7 @@ After submission:
 
 1. Wait for the confirmation/success page to load
 2. Extract the confirmation ID (application reference number, if shown)
-3. Update `jobs.yaml` entry for this job:
+3. Find the `jobs.yaml` entry matching this company + role. If no entry exists (Phase 2 triggered directly, not via Phase 3), create one. Set:
    - `status`: `applied`
    - `applied_at`: today's date
    - `confirmation_id`: extracted ID (or `null` if not shown)
