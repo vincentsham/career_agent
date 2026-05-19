@@ -1,7 +1,7 @@
 # Phase 2 v2 — Form Filling Redesign
 
 **Date:** 2026-05-19
-**Status:** Design — approved, plan written (`docs/superpowers/plans/2026-05-19-phase-2-v2-form-filling.md`)
+**Status:** Design — approved, plan written (`docs/superpowers/plans/form-filling-v2-plan.md`)
 **Supersedes:** structural parts of the former `docs/superpowers/specs/form-filling-design.md`, now relocated to `playbooks/form-filling-core.md` (the playbook + logging + self-learning model). Core fill mechanics (DOM-first algorithm, widget quirks, snapshot discipline) carry forward unchanged.
 **Note:** This document is design rationale only — it is never read at runtime. The operational instructions live in `playbooks/`.
 

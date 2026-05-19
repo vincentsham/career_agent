@@ -199,7 +199,7 @@ with:
 
 ```markdown
 **Date:** 2026-05-14
-**Updated:** 2026-05-19 (v2: core spec — 3-tier knowledge, fast-path replay; design rationale in form-filling-design-v2.md)
+**Updated:** 2026-05-19 (v2: core spec — 3-tier knowledge, fast-path replay; design rationale in form-filling-v2-design.md)
 **Status:** Active — this is the v2 CORE spec (ATS knowledge lives in playbooks/<ats>.yaml)
 ```
 
@@ -439,7 +439,7 @@ with:
 2. Detect the ATS from the tab URL. If `playbooks/<ats>.yaml` exists, read it and follow it.
 3. Compute the tenant host (URL host). If `playbooks/<ats>/<host>.yaml` exists, read it and replay it via the core spec's Probe → Replay → Record loop.
 
-Design rationale (not operational): `docs/superpowers/specs/form-filling-design-v2.md`.
+Design rationale (not operational): `docs/superpowers/specs/form-filling-v2-design.md`.
 ```
 
 - [ ] **Step 2: Verify the new instruction is in place and the old single-file wording is gone**
@@ -467,7 +467,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 - [ ] **Step 1: Confirm no operational file still references the logs path**
 
 Run: `cd "$(git rev-parse --show-toplevel)" && grep -rn "logs/form-filling" CLAUDE.md playbooks/form-filling-core.md playbooks/ ; echo "exit:$?"`
-Expected: no matches; `exit:1` (grep found nothing). (A reference in `form-filling-design-v2.md` is fine — it is the design rationale explaining the removal.)
+Expected: no matches; `exit:1` (grep found nothing). (A reference in `form-filling-v2-design.md` is fine — it is the design rationale explaining the removal.)
 
 - [ ] **Step 2: Remove the logs subsystem from git**
 
@@ -498,7 +498,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 No code — a documentation integration check. Walk a hypothetical Workday run against the restructured files and confirm every step has a home and names are consistent.
 
 **Files:**
-- Read-only: `CLAUDE.md`, `playbooks/form-filling-core.md`, `playbooks/workday.yaml`, `docs/superpowers/specs/form-filling-design-v2.md`
+- Read-only: `CLAUDE.md`, `playbooks/form-filling-core.md`, `playbooks/workday.yaml`, `docs/superpowers/specs/form-filling-v2-design.md`
 
 - [ ] **Step 1: Trace the load path**
 
@@ -518,7 +518,7 @@ Confirm the `quirks_encountered` example signature (`date_field_requires_blur`) 
 
 - [ ] **Step 5: Spec-coverage check against the v2 design**
 
-Open `form-filling-design-v2.md`. For each of §1–§7, point to where it is implemented (core spec section, workday.yaml, or CLAUDE.md). List any uncovered requirement; if found, add and complete a remediation step here before finishing.
+Open `form-filling-v2-design.md`. For each of §1–§7, point to where it is implemented (core spec section, workday.yaml, or CLAUDE.md). List any uncovered requirement; if found, add and complete a remediation step here before finishing.
 
 - [ ] **Step 6: Commit any fixes**
 
