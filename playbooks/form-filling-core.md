@@ -244,6 +244,8 @@ For every page, before filling:
 
 ### Multi-Entry DOM-First Algorithm
 
+Playbook algorithm id: `core-multi-entry-dom-first` (an ATS playbook page with `algorithm: core-multi-entry-dom-first` uses the procedure below).
+
 For any page with repeating entry groups (work experience, education, etc.). Uses ~2 evaluate calls + N dropdown clicks total — never a snapshot per entry.
 
 **Phase 1 — Create all entries upfront (1 evaluate).** N = count of entries in the source list. First entry already exists; click Add Another N−1 times:
