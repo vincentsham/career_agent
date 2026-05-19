@@ -15,12 +15,12 @@
 | Path | Action | Responsibility |
 |---|---|---|
 | `playbooks/workday.yaml` | Create | Workday ATS tier — stable knowledge true for all Workday tenants: detection, page sequence, widget library, quirks, skip lists. No tenant-specific IDs. |
-| `docs/superpowers/specs/form-filling-design.md` | Modify | The lean **core** operational spec: tier loading, generic multi-entry DOM-first algorithm, tenant schema, probe→replay→record loop, generalized pre-Save validation, post-batch read-back, quirk-graduation. RBC prose retained as legacy pending migration. |
+| `playbooks/form-filling-core.md` | Modify | The lean **core** operational spec: tier loading, generic multi-entry DOM-first algorithm, tenant schema, probe→replay→record loop, generalized pre-Save validation, post-batch read-back, quirk-graduation. RBC prose retained as legacy pending migration. |
 | `CLAUDE.md` | Modify | Phase 2 trigger switched from "read one spec" to tiered load (core → ATS tier → tenant tier). |
 | `logs/form-filling/.gitkeep` | Delete | Logs subsystem dropped per v2 design (§4). |
 | `playbooks/workday/<host>.yaml` | (runtime) | Tenant tier — written by Claude at run capture, not created by this plan. Schema defined in core spec (Task 2). |
 
-Source of truth for migrated Workday content: the current prose at `form-filling-design.md:276-413` (Workday Playbook) and `form-filling-design.md:586-623` (Workday Learned Patterns), as read at plan-writing time and reproduced verbatim in Task 1.
+Source of truth for migrated Workday content: the current prose at `form-filling-core.md:276-413` (Workday Playbook) and `form-filling-core.md:586-623` (Workday Learned Patterns), as read at plan-writing time and reproduced verbatim in Task 1.
 
 ---
 
@@ -180,14 +180,14 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
 ### Task 2: Add core-spec tier-loading, generic algorithm, tenant schema, and the fast-path loop
 
-This task is purely additive to `form-filling-design.md`. Old sections stay until Task 3 removes them, so the spec is internally consistent at every commit.
+This task is purely additive to `playbooks/form-filling-core.md`. Old sections stay until Task 3 removes them, so the spec is internally consistent at every commit.
 
 **Files:**
-- Modify: `docs/superpowers/specs/form-filling-design.md` (insert new sections; no deletions in this task)
+- Modify: `playbooks/form-filling-core.md` (insert new sections; no deletions in this task)
 
 - [ ] **Step 1: Update the header line to mark the restructure**
 
-Replace (at `form-filling-design.md:3-5`):
+Replace (at `form-filling-core.md:3-5`):
 
 ```markdown
 **Date:** 2026-05-14
@@ -205,7 +205,7 @@ with:
 
 - [ ] **Step 2: Insert the "Knowledge Tiers & Loading" section immediately after the `## Overview` block**
 
-Insert after the Overview section's closing `---` (currently `form-filling-design.md:13`), before `## Architecture`:
+Insert after the Overview section's closing `---` (currently `form-filling-core.md:13`), before `## Architecture`:
 
 ```markdown
 ## Knowledge Tiers & Loading
@@ -214,7 +214,7 @@ Phase 2 knowledge is split into three tiers. A run loads only what it needs:
 
 | Tier | File | Loaded |
 |---|---|---|
-| Core | this file (`form-filling-design.md`) | always |
+| Core | this file (`playbooks/form-filling-core.md`) | always |
 | ATS | `playbooks/<ats>.yaml` | when the tab URL matches that ATS's detection patterns |
 | Tenant | `playbooks/<ats>/<url-host>.yaml` | only if a file for that host exists |
 
@@ -256,7 +256,7 @@ Tenant files contain no personal data (only element IDs and public option labels
 
 - [ ] **Step 3: Insert the generic "Multi-Entry DOM-First Algorithm" section and the fast-path loop after `## Snapshot Discipline`**
 
-Insert immediately after the Snapshot Discipline section's closing `---` (currently `form-filling-design.md:194`), before `## Stage 4: Confirmation & Submission`:
+Insert immediately after the Snapshot Discipline section's closing `---` (currently `form-filling-core.md:194`), before `## Stage 4: Confirmation & Submission`:
 
 ````markdown
 ## Per-Page Fast-Path: Probe → Replay → Record
@@ -299,7 +299,7 @@ Every batch-fill `browser_evaluate` returns the resulting `.value` of each field
 
 - [ ] **Step 4: Insert the generalized "Pre-Save Validation" and "Quirk Graduation" sections after Stage 5 (Post-Submission Capture)**
 
-Insert immediately after the Stage 5 section's closing `---` (currently `form-filling-design.md:221`), before `## Stage 6: Run Logging`:
+Insert immediately after the Stage 5 section's closing `---` (currently `form-filling-core.md:221`), before `## Stage 6: Run Logging`:
 
 ```markdown
 ## Pre-Save Validation (every page, every ATS)
@@ -325,14 +325,14 @@ Rationale: tenant files record successful state only. The actionable signal is r
 
 - [ ] **Step 5: Verify all new sections exist and the file still parses as one document**
 
-Run: `cd "$(git rev-parse --show-toplevel)" && grep -nE "^## (Knowledge Tiers & Loading|Per-Page Fast-Path|Pre-Save Validation|Quirk Graduation)$" docs/superpowers/specs/form-filling-design.md && grep -nE "^### (Tenant file schema|Multi-Entry DOM-First Algorithm|Post-batch read-back)$" docs/superpowers/specs/form-filling-design.md`
+Run: `cd "$(git rev-parse --show-toplevel)" && grep -nE "^## (Knowledge Tiers & Loading|Per-Page Fast-Path|Pre-Save Validation|Quirk Graduation)$" playbooks/form-filling-core.md && grep -nE "^### (Tenant file schema|Multi-Entry DOM-First Algorithm|Post-batch read-back)$" playbooks/form-filling-core.md`
 Expected: 7 matching lines (4 `##` headers + 3 `###` headers), in document order.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
-git add docs/superpowers/specs/form-filling-design.md
+git add playbooks/form-filling-core.md
 git commit -m "feat(phase-2): add core-spec tier loading, generic DOM-first algorithm, fast-path
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -345,7 +345,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 Now that `playbooks/workday.yaml` exists (Task 1) and core has tier-loading + the generic algorithm (Task 2), strip the migrated/dropped prose.
 
 **Files:**
-- Modify: `docs/superpowers/specs/form-filling-design.md` (deletions + one diagram edit)
+- Modify: `playbooks/form-filling-core.md` (deletions + one diagram edit)
 
 - [ ] **Step 1: Remove the architecture diagram's stale self-learning line**
 
@@ -363,15 +363,15 @@ with:
 
 - [ ] **Step 2: Remove the "Extending playbooks" subsection**
 
-Delete the entire `### Extending playbooks` subsection under `## ATS Playbook System` (currently `form-filling-design.md:87-93`, from the `### Extending playbooks` header through the blank line before `---`). It is replaced by Quirk Graduation.
+Delete the entire `### Extending playbooks` subsection under `## ATS Playbook System` (currently `form-filling-core.md:87-93`, from the `### Extending playbooks` header through the blank line before `---`). It is replaced by Quirk Graduation.
 
 - [ ] **Step 3: Delete Stage 6 (Run Logging) and Stage 7 (Self-Learning) entirely**
 
-Delete from the `## Stage 6: Run Logging` header through the end of the Stage 7 section (currently `form-filling-design.md:223-274`), inclusive of the trailing `---`. The replacements (Pre-Save Validation, Quirk Graduation) were added in Task 2.
+Delete from the `## Stage 6: Run Logging` header through the end of the Stage 7 section (currently `form-filling-core.md:223-274`), inclusive of the trailing `---`. The replacements (Pre-Save Validation, Quirk Graduation) were added in Task 2.
 
 - [ ] **Step 4: Delete the embedded Workday Playbook prose block**
 
-Delete from the `## Workday Playbook` header through the end of `### Page 5 — Review` and its trailing `---` (currently `form-filling-design.md:276-475`). This content now lives in `playbooks/workday.yaml`.
+Delete from the `## Workday Playbook` header through the end of `### Page 5 — Review` and its trailing `---` (currently `form-filling-core.md:276-475`). This content now lives in `playbooks/workday.yaml`.
 
 - [ ] **Step 5: Delete the Workday-specific Learned Patterns entries**
 
@@ -387,19 +387,19 @@ Directly under the `## RBC Playbook` header, insert this line:
 
 - [ ] **Step 7: Verify superseded content is gone and nothing dangling remains**
 
-Run: `cd "$(git rev-parse --show-toplevel)" && ! grep -nE "^## (Stage 6: Run Logging|Stage 7: Self-Learning|Workday Playbook)$|^### Extending playbooks$" docs/superpowers/specs/form-filling-design.md && ! grep -n "logs/form-filling" docs/superpowers/specs/form-filling-design.md && ! grep -n "Append any new learned patterns to this file" docs/superpowers/specs/form-filling-design.md && echo "CLEAN"`
+Run: `cd "$(git rev-parse --show-toplevel)" && ! grep -nE "^## (Stage 6: Run Logging|Stage 7: Self-Learning|Workday Playbook)$|^### Extending playbooks$" playbooks/form-filling-core.md && ! grep -n "logs/form-filling" playbooks/form-filling-core.md && ! grep -n "Append any new learned patterns to this file" playbooks/form-filling-core.md && echo "CLEAN"`
 Expected: `CLEAN`
 
 - [ ] **Step 8: Verify the spec still has its essential surviving sections**
 
-Run: `cd "$(git rev-parse --show-toplevel)" && grep -cE "^## (Overview|Knowledge Tiers & Loading|Architecture|Trigger Modes|Pre-flight|Stage 1: Reconnaissance|Per-Page Fast-Path|Pre-Save Validation|Quirk Graduation|RBC Playbook|CAPTCHA Handling|Error Handling)" docs/superpowers/specs/form-filling-design.md`
+Run: `cd "$(git rev-parse --show-toplevel)" && grep -cE "^## (Overview|Knowledge Tiers & Loading|Architecture|Trigger Modes|Pre-flight|Stage 1: Reconnaissance|Per-Page Fast-Path|Pre-Save Validation|Quirk Graduation|RBC Playbook|CAPTCHA Handling|Error Handling)" playbooks/form-filling-core.md`
 Expected: `12`
 
 - [ ] **Step 9: Commit**
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
-git add docs/superpowers/specs/form-filling-design.md
+git add playbooks/form-filling-core.md
 git commit -m "refactor(phase-2): strip migrated Workday prose + dropped logging from core spec
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -423,7 +423,7 @@ Find the `## Phase 2: Form Filling` section and replace its body:
 
 **Trigger:** Any prompt to fill a job application form, or hand-over from Phase 3.
 
-**Instructions:** Read `docs/superpowers/specs/form-filling-design.md` and follow it exactly. Read the file at the start of every Phase 2 run — do not rely on memory of its contents.
+**Instructions:** Read `playbooks/form-filling-core.md` and follow it exactly. Read the file at the start of every Phase 2 run — do not rely on memory of its contents.
 ```
 
 with:
@@ -435,7 +435,7 @@ with:
 
 **Instructions:** Phase 2 uses a 3-tier knowledge model. At the start of every run, do not rely on memory:
 
-1. Read `docs/superpowers/specs/form-filling-design.md` (the core spec) and follow it exactly.
+1. Read `playbooks/form-filling-core.md` (the core spec) and follow it exactly.
 2. Detect the ATS from the tab URL. If `playbooks/<ats>.yaml` exists, read it and follow it.
 3. Compute the tenant host (URL host). If `playbooks/<ats>/<host>.yaml` exists, read it and replay it via the core spec's Probe → Replay → Record loop.
 
@@ -466,7 +466,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
 - [ ] **Step 1: Confirm no operational file still references the logs path**
 
-Run: `cd "$(git rev-parse --show-toplevel)" && grep -rn "logs/form-filling" CLAUDE.md docs/superpowers/specs/form-filling-design.md playbooks/ ; echo "exit:$?"`
+Run: `cd "$(git rev-parse --show-toplevel)" && grep -rn "logs/form-filling" CLAUDE.md playbooks/form-filling-core.md playbooks/ ; echo "exit:$?"`
 Expected: no matches; `exit:1` (grep found nothing). (A reference in `form-filling-design-v2.md` is fine — it is the design rationale explaining the removal.)
 
 - [ ] **Step 2: Remove the logs subsystem from git**
@@ -498,7 +498,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 No code — a documentation integration check. Walk a hypothetical Workday run against the restructured files and confirm every step has a home and names are consistent.
 
 **Files:**
-- Read-only: `CLAUDE.md`, `docs/superpowers/specs/form-filling-design.md`, `playbooks/workday.yaml`, `docs/superpowers/specs/form-filling-design-v2.md`
+- Read-only: `CLAUDE.md`, `playbooks/form-filling-core.md`, `playbooks/workday.yaml`, `docs/superpowers/specs/form-filling-design-v2.md`
 
 - [ ] **Step 1: Trace the load path**
 
