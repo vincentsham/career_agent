@@ -1,14 +1,61 @@
 # Phase 2: Form Filling Design
 
 **Date:** 2026-05-14
-**Updated:** 2026-05-19 (DOM-first Workday Page 2 algorithm + date blur fix + textarea fix + pre-Save validation)
-**Status:** Active
+**Updated:** 2026-05-19 (v2: core spec — 3-tier knowledge, fast-path replay; design rationale in form-filling-v2-design.md)
+**Status:** Active — this is the v2 CORE spec (ATS knowledge lives in playbooks/<ats>.yaml)
 
 ---
 
 ## Overview
 
 Phase 2 fills job application forms using `profile.yaml` as the data source and Playwright MCP for browser control. It uses a hand-over model — the user opens the browser and navigates to application forms manually, then hands off to Claude.
+
+---
+
+## Knowledge Tiers & Loading
+
+Phase 2 knowledge is split into three tiers. A run loads only what it needs:
+
+| Tier | File | Loaded |
+|---|---|---|
+| Core | this file (`playbooks/form-filling-core.md`) | always |
+| ATS | `playbooks/<ats>.yaml` | when the tab URL matches that ATS's detection patterns |
+| Tenant | `playbooks/<ats>/<url-host>.yaml` | only if a file for that host exists |
+
+**Load procedure (start of every run):**
+
+1. Read this core spec.
+2. Detect the ATS from the tab URL. If `playbooks/<ats>.yaml` exists, read it.
+3. Compute the tenant host = the URL host (e.g. `priceline.wd1.myworkdayjobs.com`). If `playbooks/<ats>/<host>.yaml` exists, read it.
+
+A run never loads an ATS playbook it is not applying to. A Workday application does not load the RBC playbook.
+
+### Tenant file schema
+
+A tenant file records what was *confirmed* on a real run of one company's form so the next run replays it instead of rediscovering. Written only on full capture (see Stage 5). Schema:
+
+```yaml
+ats: workday
+tenant_host: priceline.wd1.myworkdayjobs.com
+last_verified: 2026-05-19
+pages:
+  - id: 2
+    name: My Experience
+    field_ids:
+      work_experience:
+        container: '[id*="workExperience"]'
+        jobTitle_suffix: '--jobTitle'
+        company_suffix: '--companyName'
+        # one suffix per discovered field
+    dropdowns:
+      degree:
+        options: ["M.S.", "B.S."]   # confirmed labels for THIS tenant
+    custom_questions: []
+quirks_encountered:
+  - date_field_requires_blur          # signature compared across tenant files for graduation
+```
+
+Tenant files contain no personal data (only element IDs and public option labels) and are committed to git as shared knowledge.
 
 ---
 
@@ -193,6 +240,45 @@ Snapshots are expensive — option-heavy dropdowns (country lists, province list
 
 ---
 
+## Per-Page Fast-Path: Probe → Replay → Record
+
+For every page, before filling:
+
+1. **Probe** — if a tenant file has recorded element IDs for this page, run one `browser_evaluate` that checks every recorded ID still exists in the DOM. Return the list of missing IDs.
+2. **All present → replay** — skip discovery and snapshots. Batch-fill text + dates (blur) + textareas from the recorded IDs in 1–2 evaluate calls. Replay recorded dropdown option labels.
+3. **Any missing, or no tenant file → discovery** — run the Multi-Entry DOM-First Algorithm below. After full capture, (re)write the tenant record for this page.
+4. **Pre-Save validation** (below) before advancing — every page, every ATS.
+
+### Multi-Entry DOM-First Algorithm
+
+For any page with repeating entry groups (work experience, education, etc.). Uses ~2 evaluate calls + N dropdown clicks total — never a snapshot per entry.
+
+**Phase 1 — Create all entries upfront (1 evaluate).** N = count of entries in the source list. First entry already exists; click Add Another N−1 times:
+
+```js
+async () => {
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  for (let i = 0; i < N - 1; i++) {
+    const btn = Array.from(document.querySelectorAll('button'))
+      .find(b => /Add Another/i.test(b.textContent));
+    btn?.click();
+    await delay(600);
+  }
+}
+```
+
+**Phase 2 — Discover field IDs (1 evaluate).** Query all entry containers; return a map `{ 0: { jobTitle: id, company: id, ... }, 1: {...} }`. Fields absent from the DOM simply don't appear — skip them without error. The container query is ATS-specific (see the ATS playbook; Workday uses `[id*="workExperience"]`).
+
+**Phase 3 — Batch fill (1–2 evaluates).** Fill all discovered text inputs, spinbutton dates (with the blur pattern from the ATS playbook's widget library), and textareas (direct assignment). The same evaluate returns each field's resulting `.value` for post-batch read-back.
+
+**Phase 4 — Custom dropdowns (snapshot + browser_click per option).** For each custom-listbox field: scoped snapshot for option refs, then `browser_click` the match. Never JS `.click()` on options.
+
+### Post-batch read-back
+
+Every batch-fill `browser_evaluate` returns the resulting `.value` of each field it set. Compare against intended values; any mismatch triggers a per-field retry. No extra snapshot — the data rides back on the same call.
+
+---
+
 ## Stage 4: Confirmation & Submission
 
 When the submit button is reached:
@@ -217,6 +303,28 @@ After submission:
    - `status`: `applied`
    - `applied_at`: today's date
    - `confirmation_id`: extracted ID (or `null` if not shown)
+
+---
+
+## Pre-Save Validation (every page, every ATS)
+
+Before clicking Save/Next/Continue on any page, run:
+
+```js
+() => Array.from(document.querySelectorAll('p, span, div'))
+  .filter(el => el.childElementCount === 0 && el.textContent.includes('required and must'))
+  .map(el => el.textContent.trim())
+```
+
+Non-empty array → diagnose and fill the missing fields before advancing. Most common cause: a date spinbutton blur was not fired — re-fill those dates with the blur pattern.
+
+## Quirk Graduation (replaces run logging + self-learning)
+
+There is no separate logging subsystem. When the discovery path hits a quirk and recovers from it (e.g. a date field needed a blur, a dropdown label differed), append the quirk's signature to the tenant file's `quirks_encountered` list (written on full capture, Stage 5).
+
+**Graduation rule:** when writing/updating any tenant file, scan the other tenant files for the same ATS. If the same quirk signature appears in **≥3 tenant files**, promote it into that ATS's playbook (`playbooks/<ats>.yaml` under `quirks:`) so future tenants never rediscover it. Runs on every capture; no extra files.
+
+Rationale: tenant files record successful state only. The actionable signal is recurring, recoverable quirks — those occur on captured runs. Patterns from runs that fail before capture are intentionally not retained.
 
 ---
 
