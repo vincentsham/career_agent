@@ -1,0 +1,122 @@
+# Workday ATS tier — stable across ALL Workday tenants.
+# Tenant-specific field IDs and confirmed dropdown labels live in
+# playbooks/workday/<host>.yaml (written at run capture, not here).
+ats: workday
+
+detection:
+  url_matches:
+    - "*.workday.com"
+    - "*.myworkdayjobs.com"
+    - "wd*.myworkday.com"
+
+pages:
+  - id: 1
+    name: My Information
+    fields:
+      - { label: First Name, source: personal.first_name, widget: text }
+      - { label: Last Name, source: personal.last_name, widget: text }
+      - { label: Address Line 1, source: personal.address.street, widget: text }
+      - { label: City, source: personal.address.city, widget: text }
+      - { label: State/Province, source: personal.address.state, widget: custom-listbox, note: "e.g. ON -> Ontario" }
+      - { label: Postal Code, source: personal.address.zip, widget: text }
+      - { label: Country, source: personal.address.country, widget: custom-listbox, note: may be pre-filled }
+      - { label: Phone, source: personal.phone, widget: text }
+      - { label: Email, source: personal.email, widget: text, note: verify if pre-filled }
+      - { label: "How did you hear?", source: how_did_you_hear_about_us, widget: radio-or-dropdown, note: "options vary by instance — read them, never assume" }
+      - { label: "Previously employed here?", source: "No", widget: radio }
+    delta_scan: catch company-specific additions (middle name, preferred name, pronoun)
+  - id: 2
+    name: My Experience
+    algorithm: core-multi-entry-dom-first
+    sections:
+      resume_upload: { widget: browser_file_upload, source: pre-flight resume path }
+      websites:
+        - { source: personal.linkedin }
+        - { source: personal.github }
+      work_experience:
+        repeat_over: work_history
+        fields:
+          - { label: Job Title, source: title, widget: text }
+          - { label: Company, source: company, widget: text }
+          - { label: Location, source: location, widget: text, optional: true }
+          - { label: Start Month/Year, source: start_date, widget: spinbutton-date }
+          - { label: End Month/Year, source: end_date, widget: spinbutton-date, note: or "currently work here" checkbox }
+          - { label: Description, source: description, widget: textarea }
+      education:
+        repeat_over: education
+        fields:
+          - { label: School, source: school, widget: text }
+          - { label: Degree, source: degree, widget: custom-listbox, note: "labels differ by instance — read them, never assume" }
+          - { label: Field of Study, widget: virtual-list, skip: true, note: not required in any observed instance }
+          - { label: Start Year, source: start_year, widget: text }
+          - { label: End Year, source: end_year, widget: text }
+          - { label: GPA, source: gpa, widget: text, optional: true }
+    delta_scan: catch portfolio URL, cover letter upload, open-ended questions
+  - id: 3
+    name: Application Questions
+    note: company-specific — execute common patterns then delta-scan
+    common_questions:
+      - { pattern: "Non-compete / restrictive covenant", answer: "No" }
+      - { pattern: "Legally authorized to work in [country]", answer: "Yes", source: work_authorization.authorized }
+      - { pattern: "Require visa sponsorship", answer: "No", source: work_authorization.requires_sponsorship }
+      - { pattern: "Relatives or connections at company", answer: "No" }
+      - { pattern: "Eligible to work in Canada / UK", answer: "Yes" }
+      - { pattern: "Financial licenses or registrations", answer: "No" }
+      - { pattern: "Compensation expectation", answer: "$[salary_min] - $[salary_max] [currency]", source: compensation }
+      - { pattern: "Prior relationship with / history at company", answer: "Not Applicable" }
+  - id: 4
+    name: Voluntary Disclosures
+    fields:
+      - { label: Gender, source: diversity.gender, widget: radio-or-dropdown }
+      - { label: Race / Ethnicity, source: diversity.ethnicity, widget: radio-or-dropdown }
+      - { label: Disability, source: diversity.disability_status, widget: typeahead, note: "-> No (Canada)" }
+      - { label: Terms & Conditions, widget: checkbox, always: check }
+    note: if gender/ethnicity blank in profile, select "I do not wish to disclose" — do not stop unless no opt-out exists
+    delta_scan: catch veteran status, LGBTQ2+
+  - id: 5
+    name: Review
+    note: no fields — notify user, wait for explicit "submit"
+
+pre_flight:
+  - Declare skip list — Skills, Certifications, Languages are skipped; do not explore them
+  - Check profile.yaml has diversity.gender, diversity.ethnicity, diversity.disability_status, how_did_you_hear_about_us — flag gaps before starting
+  - Resolve resume file before Page 2
+
+widget_library:
+  custom-listbox:
+    note: Workday province/state and degree dropdowns are custom listboxes, not native <select>. browser_select_option fails.
+    procedure:
+      - Click the container to open it
+      - Take a scoped snapshot of the expanded listbox to get option refs
+      - Click the matching option ref with browser_click (JS .click() does NOT register)
+  spinbutton-date:
+    note: Date inputs are spinbuttons. Without a blur event the display div stays empty and Save shows "From is required" despite a value being set.
+    fill_pattern: |
+      const fillDate = (el, value) => {
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        el.focus();
+        setter.call(el, value);
+        el.dispatchEvent(new InputEvent('input', { bubbles: true, data: String(value) }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.dispatchEvent(new Event('blur', { bubbles: true }));
+      };
+  textarea:
+    note: HTMLInputElement.prototype.value setter throws "Illegal invocation" on <textarea>. Use direct assignment.
+    fill_pattern: |
+      el.value = text;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+  virtual-list:
+    note: Field of Study uses a virtualised list and is not required in any observed instance — SKIP it.
+
+quirks:
+  - id: js_click_no_register_on_options
+    text: "JS .click() does not register on Workday option elements. Always use browser_click with the accessibility-tree ref from a fresh snapshot."
+  - id: skills_typeahead_no_languages
+    text: "Skills typeahead returns 'No Items.' for Python/SQL etc. Skip the Skills section; do not search."
+  - id: hdyhau_options_vary
+    text: "'How Did You Hear About Us?' options are instance-specific. Open the dropdown and read options before selecting. Observed: Manulife=radio buttons; Edelman=Corporate Website/Glassdoor/Handshake/Indeed/LinkedIn/LinkedIn-Alumni/Other."
+  - id: date_field_requires_blur
+    text: "Date spinbuttons require a blur event to commit (see widget_library.spinbutton-date)."
+  - id: textarea_direct_assignment
+    text: "Textareas need direct value assignment, not the HTMLInputElement setter (see widget_library.textarea)."
