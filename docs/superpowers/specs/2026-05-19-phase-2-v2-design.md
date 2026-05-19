@@ -56,23 +56,21 @@ First application to a company = discovery cost (same as today) + a record write
 
 ---
 
-## 4. Logs — kept, with two hard mechanisms
+## 4. Quirk graduation (no separate logs)
 
-The existing `logs/form-filling/` system stays, narrowed to one job: **the cross-tenant graduation signal**. It died before because Stage 6 ("write a trace") and Stage 7 ("review what you encountered") were soft closing suggestions with no trigger and no consumer — so they were skipped every run. v2 fixes both structurally:
+There is no separate logging subsystem. The cross-tenant graduation signal lives in the tenant files we already write and load.
 
-**Mechanism A — mandatory writer.** The log write is a non-optional step in the run loop, gated identically to the tenant-file write (on full capture, see §5). Not a closing suggestion.
+During a discovery run, any quirk hit and recovered from (e.g. a date field needed a blur, a dropdown label differed) is appended to that tenant file's `quirks_encountered` list, written on full capture (§5).
 
-**Mechanism B — defined consumer with a trigger.** *Before* writing/updating a tenant file, scan that ATS's accumulated logs. If the same widget-quirk or error signature appears in **≥3 distinct tenants**, promote it from tenant-tier knowledge up into the stable ATS tier (`playbooks/<ats>.yaml`). Concrete rule, runs every capture, observable output.
+**Graduation consumer:** when writing/updating any tenant file, check the other tenant files for the same ATS. If the same quirk signature appears in **≥3 tenant files**, promote it into the stable ATS tier (`playbooks/<ats>.yaml`) so future tenants of that ATS never rediscover it. Concrete rule, runs on every capture, no extra files or writer step.
 
-**Why logs are still justified at all:** tenant files record *successful state only* — a failed or aborted run writes no tenant file. The logs are therefore the *only* place failure-and-recovery patterns are retained, and recurring failures across tenants are exactly the signal worth promoting into the permanent ATS tier.
-
-**Log content unchanged:** execution trace only — widgets seen, errors, recovery, delta fields. No field values, no IDs. One file per run: `logs/form-filling/<company>_<role>_<YYYY-MM-DD>.yaml`.
+This drops the never-used `logs/form-filling/` subsystem entirely. The trade-off: quirks from runs that fail before capture are not retained — acceptable, because the actionable signal is *recurring, recoverable* quirks, which occur on successful (captured) runs.
 
 ---
 
 ## 5. Write-back trigger
 
-The tenant file **and** the run log are written only after the run is **fully captured** (`jobs.yaml` status set to `applied`). A failed or aborted run records neither — the fast-path is never poisoned with broken state. During the run, per-page records are accumulated in memory and flushed together on capture.
+The tenant file is written only after the run is **fully captured** (`jobs.yaml` status set to `applied`). A failed or aborted run records nothing — the fast-path is never poisoned with broken state. During the run, per-page records and any quirks encountered are accumulated in memory and flushed together on capture.
 
 ---
 
@@ -95,13 +93,15 @@ pages:
       degree:
         options: ["M.S.", "B.S."]   # confirmed labels for THIS tenant
     custom_questions: []
+quirks_encountered:
+  - date_field_requires_blur          # signature compared across tenant files for graduation
 ```
 
 ---
 
 ## 7. Scope
 
-- Build the framework generically: tier loader, probe → replay → record loop, generalized pre-Save validation, post-batch read-back, mandatory log writer + graduation consumer.
+- Build the framework generically: tier loader, probe → replay → record loop, generalized pre-Save validation, post-batch read-back, quirk-graduation check.
 - Migrate **Workday** fully into `playbooks/workday.yaml` (we have the most data on it).
 - **RBC stays as prose in the core spec** for now; it migrates to a tier file the next time it is run. No big-bang migration.
 
@@ -116,7 +116,7 @@ pages:
 | Dropdown options | Read every run | Read once, recorded | Replayed |
 | Snapshots | Many | DOM-first minimum | Near-zero (probe only) |
 | Accuracy guard | Workday-only pre-Save | Probe + generalized validation + read-back | Probe + generalized validation + read-back |
-| Logs | Specced, never written | Mandatory write + graduation scan | Mandatory write + graduation scan |
+| ATS-tier self-improvement | Specced, never ran | Quirks recorded in tenant file | Graduates to ATS tier at ≥3 tenants |
 
 ---
 
