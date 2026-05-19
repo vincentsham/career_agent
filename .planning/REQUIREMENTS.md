@@ -62,8 +62,7 @@ Requirements for milestone v1.0. Each maps to roadmap phases.
 |---------|--------|
 | Multi-user support | Personal tool only — no auth, profiles, or user management |
 | Custom runner script or orchestration code | Claude Code IS the orchestrator (Approach A) |
-| Paid scraping APIs (Apify, ScrapingBee) | Chrome MCP with human-like timing only |
-| Playwright/Puppeteer | Fingerprinted too easily; using Chrome DevTools MCP |
+| Paid scraping APIs (Apify, ScrapingBee) | Playwright MCP with human-like timing only |
 | Automatic submission without user confirmation | Always pause-and-confirm |
 | Parsing or modifying .cls files | Never touched by automation |
 

@@ -79,9 +79,7 @@ A 3-phase career agent that tailors resumes, fills job applications, and scrapes
 ### Tech Stack
 - Mixed JS/Python
 - latexmk for LaTeX → PDF rendering
-- Chrome DevTools MCP for programmatic browser control
-- Claude in Chrome for page-aware browsing
-- filesystem MCP for reading local files
+- Playwright MCP for programmatic browser control
 - gh for version controlling tailored resumes
 - context7 MCP for live documentation
 
@@ -95,9 +93,7 @@ A 3-phase career agent that tailors resumes, fills job applications, and scrapes
 ### Tools Available
 - `latexmk` → compile resume to PDF
 - `gh` → version control, one commit per tailored resume
-- Chrome DevTools MCP → programmatic browser control (click, fill, navigate)
-- Claude in Chrome → page-aware browsing and interaction
-- filesystem MCP → read local files
+- Playwright MCP → programmatic browser control (click, fill, navigate, screenshot)
 - context7 MCP → live docs
 
 ### Critical Rules
@@ -113,40 +109,19 @@ A 3-phase career agent that tailors resumes, fills job applications, and scrapes
 
 **Trigger:** Any prompt about tailoring, writing, or updating a resume for a role or company — exact wording doesn't matter.
 
-**Instructions:** Read `docs/superpowers/specs/resume-tailoring-design.md` and follow it exactly. Read the file at the start of every Phase 1 run — do not rely on memory of its contents.
+**Instructions:** Read `playbooks/resume-tailoring.md` and follow it exactly. Read the file at the start of every Phase 1 run — do not rely on memory of its contents.
 
 ## Phase 2: Form Filling
 
-### Before filling
-1. Open the application URL in Chrome
-2. Take a screenshot to confirm the page loaded correctly
-3. Scroll through the entire form before touching any field
-4. Note all required fields (marked with *)
+**Trigger:** Any prompt to fill a job application form, or hand-over from Phase 3.
 
-### Filling order
-1. Personal info → use `profile.yaml` personal section
-2. Work authorization → use `profile.yaml` work_authorization section
-3. Work history → use `profile.yaml` work_history (most recent first)
-4. Education → use `profile.yaml` education section
-5. Skills → use `profile.yaml` skills section
-6. Resume upload → locate `input[type="file"]` → upload `output/<Company>-<Role>/resume.pdf`
-7. Cover letter → if field present, follow Phase 2: Cover Letter section below
-8. Voluntary disclosures → use `profile.yaml` diversity section
+**Instructions:** Phase 2 uses a 3-tier knowledge model. At the start of every run, do not rely on memory:
 
-### Rules
-- Dropdowns: pick the closest matching option; if genuinely ambiguous, stop and ask
-- Required field with no profile.yaml match: STOP → take screenshot → ask user
-- Optional field with no match: leave blank
-- Multi-page forms: fill page → scroll to top to check for red errors → click Next
+1. Read `playbooks/form-filling-core.md` (the core spec) and follow it exactly.
+2. Detect the ATS from the tab URL. If `playbooks/<ats>.yaml` exists, read it and follow it.
+3. Compute the tenant host (URL host). If `playbooks/<ats>/<host>.yaml` exists, read it and replay it via the core spec's Probe → Replay → Record loop.
 
-### CAPTCHA
-If CAPTCHA detected (image challenge, checkbox, Cloudflare wall): STOP → take screenshot → tell user "CAPTCHA at [URL] — please solve it" → wait for user confirmation → continue
-
-### Submitting
-1. Take a full-page screenshot of the completed form
-2. Show user: "Ready to submit to [Company] for [Role]. Review the screenshot and type 'submit' to confirm."
-3. Submit ONLY after user explicitly confirms
-4. After submit: take screenshot of confirmation page → extract confirmation ID → update `jobs.yaml` entry: set status to `applied`, set applied_at, set confirmation_id
+Design rationale (not operational): `docs/superpowers/specs/form-filling-v2-design.md`.
 
 ## Phase 2: Cover Letter Generator
 

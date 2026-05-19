@@ -66,8 +66,7 @@ Eliminate the manual, repetitive work of applying to jobs while keeping the huma
 
 - Multi-user support — personal tool only; no auth, profiles, or user management
 - Custom runner script or orchestration code — Claude Code IS the orchestrator (Approach A)
-- Paid scraping APIs (Apify, ScrapingBee) — Chrome MCP with human-like timing only
-- Playwright/Puppeteer — fingerprinted too easily; using Chrome DevTools MCP
+- Paid scraping APIs (Apify, ScrapingBee) — Playwright MCP with human-like timing only
 - Automatic submission without user confirmation — always pause-and-confirm
 - Parsing or modifying `.cls` files — never touched by automation
 
@@ -75,7 +74,7 @@ Eliminate the manual, repetitive work of applying to jobs while keeping the huma
 
 - Resume exists as LaTeX source (.tex + .cls) — not yet in the repo; will be copied to `resume/`
 - `profile.yaml` doesn't exist yet and must be built from scratch using a form-first schema (what job applications ask for, not what the resume contains)
-- Chrome DevTools MCP (programmatic CDP control) and Claude in Chrome (page-aware extension) are both available and serve different roles — CDP for automation, extension for context
+- Playwright MCP is the browser automation tool — configured in `.mcp.json` with `--user-data-dir ./job_search_profile --headed` to persist login sessions
 - LinkedIn and Indeed are primary scraping targets; both have aggressive bot detection requiring human-like behavior
 - All "skills" in this project are CLAUDE.md instruction sets and YAML files — no application code is written
 
@@ -85,7 +84,7 @@ Eliminate the manual, repetitive work of applying to jobs while keeping the huma
 - **Accuracy**: Never fabricate resume content — only rephrase/reorder/highlight existing content
 - **Orchestration**: Claude Code as sole orchestrator — no separate runner scripts or daemons
 - **State**: File-based only (YAML) — no database, no external services
-- **Anti-bot**: Chrome MCP + human-like timing only — no paid proxy services
+- **Anti-bot**: Playwright MCP + human-like timing only — no paid proxy services
 - **Version control**: One git commit per tailored resume, message includes company + role
 
 ## Key Decisions
@@ -93,7 +92,7 @@ Eliminate the manual, repetitive work of applying to jobs while keeping the huma
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Claude Code as sole orchestrator (Approach A) | Zero infra to build; conversational pause-confirm loop is native to Claude Code | — Pending |
-| Chrome DevTools MCP over Playwright | Less fingerprinted; real browser instance harder to detect | — Pending |
+| Playwright MCP over Chrome DevTools MCP | Interactive form filling needs real-time page state, dynamic element waiting, and error recovery — Playwright MCP enables this; CDP one-shots do not | — Decided |
 | File-based state (YAML) over SQLite | Simpler, human-readable, no dependency | — Pending |
 | LinkedIn + Indeed as primary boards | Highest volume; others extensible | — Pending |
 | form-first profile.yaml schema | Job applications ask for fields not in resume (visa, salary, remote pref) | — Pending |
