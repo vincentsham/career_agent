@@ -128,7 +128,7 @@ For unknown ATSes, or any page with no playbook entry, the standard Scan → Pla
 ### Why this helps
 
 - Known fields are executed straight through with scoped (not full-page) snapshots — token cost drops significantly
-- The delta-scan catches company-specific custom fields that differ between Workday instances
+- The delta-scan catches company-specific custom fields that differ between ATS instances (e.g. different Workday tenants)
 - Playbooks are flexible by design: they cover what's predictably always there, not every possible variation
 
 ---
@@ -262,7 +262,7 @@ async () => {
 
 **Phase 2 — Discover field IDs (1 evaluate).** Query all entry containers; return a map `{ 0: { jobTitle: id, company: id, ... }, 1: {...} }`. Fields absent from the DOM simply don't appear — skip them without error. The container query is ATS-specific (see the ATS playbook; Workday uses `[id*="workExperience"]`).
 
-**Phase 3 — Batch fill (1–2 evaluates).** Fill all discovered text inputs, spinbutton dates (with the blur pattern from the ATS playbook's widget library), and textareas (direct assignment). The same evaluate returns each field's resulting `.value` for post-batch read-back.
+**Phase 3 — Batch fill (1–2 evaluates).** Fill all discovered text inputs, spinbutton dates (with the blur pattern from the ATS playbook's `widget_library`, e.g. `playbooks/workday.yaml`), and textareas (direct assignment). The same evaluate returns each field's resulting `.value` for post-batch read-back.
 
 **Phase 4 — Custom dropdowns (snapshot + browser_click per option).** For each custom-listbox field: scoped snapshot for option refs, then `browser_click` the match. Never JS `.click()` on options.
 
@@ -309,7 +309,7 @@ Before clicking Save/Next/Continue on any page, run:
   .map(el => el.textContent.trim())
 ```
 
-Non-empty array → diagnose and fill the missing fields before advancing. Most common cause: a date spinbutton blur was not fired — re-fill those dates with the blur pattern.
+Non-empty array → diagnose and fill the missing fields before advancing. Most common cause: a date spinbutton blur was not fired — re-fill those dates with the blur pattern (see the ATS playbook's `widget_library`, e.g. `playbooks/workday.yaml`).
 
 ---
 
@@ -424,7 +424,7 @@ No fields. Notify user:
 
 ## Learned Patterns
 
-Use this section for new ATS behaviors and workarounds that don't yet have a full playbook. Once enough patterns accumulate for an ATS, graduate them into a named playbook section.
+Use this section for cross-ATS behavioral patterns that are not specific to one ATS. ATS-specific quirks do NOT belong here — they are recorded per-tenant and promoted into the ATS tier file (`playbooks/<ats>.yaml` → `quirks:`) via the Quirk Graduation rule above.
 
 ### "How Did You Hear About Us?" — infer from source
 
