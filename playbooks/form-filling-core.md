@@ -168,7 +168,7 @@ Claude builds an explicit field map before touching any field:
 | Required field, no match | any | — | stop, ask user |
 | Optional field, no match | any | — | leave blank |
 
-**Dropdown ambiguity**: if the closest option is genuinely unclear, stop and ask before selecting.
+**Dropdown ambiguity**: if the closest option is genuinely unclear, stop and ask before selecting. Once the user confirms a choice, record it to the tenant file's `dropdowns` block (on full capture) so the same company is never ambiguous on that field again.
 
 ---
 

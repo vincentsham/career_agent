@@ -35,6 +35,7 @@ pages:
         - { source: personal.github }
       work_experience:
         repeat_over: work_history
+        container: '[id*="workExperience"]'
         fields:
           - { label: Job Title, source: title, widget: text }
           - { label: Company, source: company, widget: text }
