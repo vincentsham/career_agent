@@ -318,6 +318,8 @@ Before clicking Save/Next/Continue on any page, run:
 
 Non-empty array → diagnose and fill the missing fields before advancing. Most common cause: a date spinbutton blur was not fired — re-fill those dates with the blur pattern.
 
+---
+
 ## Quirk Graduation (replaces run logging + self-learning)
 
 There is no separate logging subsystem. When the discovery path hits a quirk and recovers from it (e.g. a date field needed a blur, a dropdown label differed), append the quirk's signature to the tenant file's `quirks_encountered` list (written on full capture, Stage 5).
@@ -329,6 +331,8 @@ Rationale: tenant files record successful state only. The actionable signal is r
 ---
 
 ## Stage 6: Run Logging
+
+> **SUPERSEDED by "Quirk Graduation" above. This section is removed in the v2 migration. Do not follow it.**
 
 After every run (success or failure), write an execution trace to `logs/form-filling/`.
 
@@ -371,6 +375,8 @@ Rules:
 ---
 
 ## Stage 7: Self-Learning
+
+> **SUPERSEDED by "Quirk Graduation" above. This section is removed in the v2 migration. Do not follow it.**
 
 After each fully captured application, Claude reviews what it encountered. If any new ATS, field type, or workaround was needed that is not already in this spec, it appends to the appropriate playbook section or Learned Patterns below.
 
