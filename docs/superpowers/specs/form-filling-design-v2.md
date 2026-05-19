@@ -1,8 +1,9 @@
 # Phase 2 v2 — Form Filling Redesign
 
 **Date:** 2026-05-19
-**Status:** Design — approved, pending implementation plan
-**Supersedes:** structural parts of `form-filling-design.md` (the playbook + logging + self-learning model). Core fill mechanics (DOM-first algorithm, widget quirks, snapshot discipline) carry forward unchanged.
+**Status:** Design — approved, plan written (`docs/superpowers/plans/2026-05-19-phase-2-v2-form-filling.md`)
+**Supersedes:** structural parts of the former `docs/superpowers/specs/form-filling-design.md`, now relocated to `playbooks/form-filling-core.md` (the playbook + logging + self-learning model). Core fill mechanics (DOM-first algorithm, widget quirks, snapshot discipline) carry forward unchanged.
+**Note:** This document is design rationale only — it is never read at runtime. The operational instructions live in `playbooks/`.
 
 ---
 
@@ -20,7 +21,7 @@ Replace the single monolithic spec with three load tiers:
 
 | Tier | File | Contents | Loaded |
 |---|---|---|---|
-| Core | `form-filling-design.md` | Process stages, snapshot discipline, error/CAPTCHA handling, the generic DOM-first algorithm. ATS-agnostic. | Always |
+| Core | `playbooks/form-filling-core.md` | Process stages, snapshot discipline, error/CAPTCHA handling, the generic DOM-first algorithm. ATS-agnostic. | Always |
 | ATS | `playbooks/<ats>.yaml` | Stable across **all tenants** of that ATS: detection regex, page sequence + names, widget quirks (date-blur, custom-listbox click, skip virtual-list/Skills), discovery query patterns, batch-fill JS templates. | When URL matches that ATS |
 | Tenant | `playbooks/<ats>/<tenant-host>.yaml` | Confirmed field IDs per page, confirmed dropdown option-label sets, company-specific custom questions. | Only if a file for that host exists |
 

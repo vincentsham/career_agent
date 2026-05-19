@@ -109,13 +109,13 @@ A 3-phase career agent that tailors resumes, fills job applications, and scrapes
 
 **Trigger:** Any prompt about tailoring, writing, or updating a resume for a role or company — exact wording doesn't matter.
 
-**Instructions:** Read `docs/superpowers/specs/resume-tailoring-design.md` and follow it exactly. Read the file at the start of every Phase 1 run — do not rely on memory of its contents.
+**Instructions:** Read `playbooks/resume-tailoring.md` and follow it exactly. Read the file at the start of every Phase 1 run — do not rely on memory of its contents.
 
 ## Phase 2: Form Filling
 
 **Trigger:** Any prompt to fill a job application form, or hand-over from Phase 3.
 
-**Instructions:** Read `docs/superpowers/specs/form-filling-design.md` and follow it exactly. Read the file at the start of every Phase 2 run — do not rely on memory of its contents.
+**Instructions:** Read `playbooks/form-filling-core.md` and follow it exactly. Read the file at the start of every Phase 2 run — do not rely on memory of its contents.
 
 ## Phase 2: Cover Letter Generator
 

@@ -1,7 +1,7 @@
 # Phase 2: Form Filling Design
 
 **Date:** 2026-05-14
-**Updated:** 2026-05-15
+**Updated:** 2026-05-19 (DOM-first Workday Page 2 algorithm + date blur fix + textarea fix + pre-Save validation)
 **Status:** Active
 
 ---
@@ -93,15 +93,24 @@ When a new ATS or a novel page pattern is encountered:
 
 ---
 
+## Pre-flight (run once before the first page, any ATS)
+
+1. **Close extra tabs**: Close all browser tabs except the target application tab (and optionally the job listing). Playwright MCP resolves button clicks by role/name globally across all open tabs — extra tabs cause misfired clicks that kill sessions.
+2. **Identify the resume file**: Check `output/` for `resume_<company>_<role>.pdf`. If not found, use `resume/resume.pdf`. Resolve before Page 1.
+3. **Compute start date**: Convert `availability.start_date` ("2 weeks", "immediately", etc.) to an absolute `YYYY-MM-DD` date based on today.
+
+---
+
 ## Stage 1: Reconnaissance (Scan)
 
 For **unknown ATSes only** (no playbook match):
 
-1. Takes a snapshot of the current page state via Playwright
-2. Inventories all visible form fields: label text, field type, required status (`*`)
-3. Detects page structure: looks for Next / Continue / Submit buttons to determine if more pages follow
-4. Flags any cover letter or free-text fields that require generation rather than a direct lookup
-5. If CAPTCHA detected: stop, notify user in prompt, wait for confirmation before continuing
+1. Take a `browser_snapshot(depth=3)` to see page structure cheaply — this returns field labels and roles without expanding dropdown option lists
+2. If a field needs its options read (ambiguous dropdown, custom widget), take a scoped snapshot on that container only
+3. Inventory all visible form fields: label text, field type, required status (`*`)
+4. Detect page structure: looks for Next / Continue / Submit buttons to determine if more pages follow
+5. Flag any cover letter or free-text fields that require generation rather than a direct lookup
+6. If CAPTCHA detected: stop, notify user in prompt, wait for confirmation before continuing
 
 After each Next/Continue transition, Claude re-runs this scan on the new page before filling anything.
 
@@ -135,9 +144,30 @@ Claude fills each field based on type:
 | Checkbox | Check if profile value is true/yes; uncheck otherwise |
 | Radio | Select option matching profile value |
 | Date | Format to match what the field expects (MM/DD/YYYY, YYYY-MM-DD, etc.) |
-| File | `browser_upload_file` — use `output/resume_<company>_<role>.pdf`; fall back to `resume/resume.pdf` if not found |
+| File | `browser_file_upload` — use `output/resume_<company>_<role>.pdf`; fall back to `resume/resume.pdf` if not found |
 | Cover letter (required) | Generate using job description + `profile.yaml` per cover letter rules in CLAUDE.md |
 | Cover letter (optional) | Leave blank |
+
+### Batch fill via `browser_evaluate`
+
+When a page has **3 or more native `<select>` dropdowns** and their field names/IDs are known from the playbook, fill them all in a single `browser_evaluate` call instead of individual `browser_select_option` calls:
+
+```js
+() => {
+  const set = (selector, value) => {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set;
+    setter.call(el, value);
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  set('[aria-label="Field label one"]', 'Yes');
+  set('[aria-label="Field label two"]', 'No');
+  // ... remaining fields
+}
+```
+
+Use `browser_select_option` for individual fields or when the selector is uncertain. Use batch fill only when selectors are confirmed from a previous scan or playbook.
 
 After filling all fields on the current page, Claude clicks Next/Continue and re-enters Scan → Plan → Fill on the new page. This repeats until the submit button is the only remaining action.
 
@@ -145,17 +175,21 @@ After filling all fields on the current page, Claude clicks Next/Continue and re
 
 ## Snapshot Discipline
 
-Snapshots are expensive — Workday accessibility trees are large. Follow this budget strictly:
+Snapshots are expensive — option-heavy dropdowns (country lists, province lists) can add 3,000–5,000 tokens per snapshot. Follow this budget strictly:
 
 | When | Action |
 |---|---|
-| Page start (Scan) | One full snapshot — inventory all fields |
+| Page start (Scan) | `browser_snapshot(depth=3)` — structure only, no option lists |
+| Need to read dropdown options | Scoped snapshot on that container only |
+| Page contains country/province dropdowns | Save to `filename=".playwright-mcp/page-scan.yml"` then `Read` only the relevant section |
 | During fill — plain text, textarea, radio, checkbox | No snapshot — trust the fill, continue |
 | During fill — typeahead or file upload | One scoped snapshot after the interaction to confirm selection |
-| Before clicking Next/Continue | One snapshot to verify complex fields are set correctly |
+| Before clicking Next/Continue | `browser_snapshot(depth=3)` to verify required fields are set |
 | Stale ref recovery | Snapshot the **nearest stable container** (section div), not the full page |
 
 **Never re-snapshot just to find the next field.** Plan the full field order from the initial scan and execute it straight through.
+
+**Never use a full snapshot on a page with country/state dropdowns.** Those lists bloat every snapshot by thousands of tokens.
 
 ---
 
@@ -311,24 +345,59 @@ Snapshot scope: scoped containers only — never full page.
 - File path from pre-flight
 - Widget: `browser_file_upload`
 
-**Step 2 — LinkedIn URL**
-- Source: `personal.linkedin`
-- Widget: text
+**Step 2 — Websites**
 
-**Step 3 — Work Experience** (repeat for each entry in `work_history`, in order)
+Add both LinkedIn and GitHub URLs. Click "Add" for the first, then "Add Another" for the second:
+
+| Entry | Source | Value |
+|---|---|---|
+| Website 1 | `personal.linkedin` | LinkedIn profile URL |
+| Website 2 | `personal.github` | GitHub profile URL |
+
+**Step 3 — Work Experience**
+
+Use the DOM-first 4-phase algorithm. Do not snapshot per entry — this step uses ~2 evaluate calls + N dropdown clicks total.
+
+**Phase 1 — Create all entries upfront (1 evaluate)**
+
+N = count of entries in `work_history`. First entry already exists; click Add Another N−1 times:
+
+```js
+async () => {
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  for (let i = 0; i < N - 1; i++) {
+    const btn = Array.from(document.querySelectorAll('button'))
+      .find(b => /Add Another/i.test(b.textContent));
+    btn?.click();
+    await delay(600);
+  }
+}
+```
+
+**Phase 2 — Discover all field IDs (1 evaluate)**
+
+Query all work experience entry containers and return their input/textarea element IDs, labels, and types. The exact query depends on the instance DOM — use `[id*="workExperience"]` or `[data-automation-id*="workExperience"]` to scope to entries. Goal: return a map of `{ 0: { jobTitle: id, company: id, dateFrom: id, dateTo: id, description: id, ... }, 1: {...} }`. Fields absent from the DOM simply don't appear — skip them without error.
+
+**Phase 3 — Batch fill text fields, dates, and descriptions (1–2 evaluates)**
+
+Fill all discovered text inputs, spinbutton date inputs (with blur per the date fill pattern), and textareas in one or two evaluate calls. Use the date fill pattern for all spinbuttons. Use direct assignment for all textareas.
+
+**Phase 4 — Custom dropdowns (snapshot + browser_click per option)**
+
+For each entry's custom-listbox fields (degree, location if present, etc.): take a scoped snapshot to get option refs, then `browser_click` the matching ref. Never use JS `.click()` on option elements.
+
+**Degree label mapping**: Workday degree options differ by instance — always open the dropdown and read the actual options before selecting. Do not assume from profile.yaml values or from other Workday instances.
+
+Fields per entry (fill only what Phase 2 discovers is present):
 
 | Field | Source | Widget |
 |---|---|---|
 | Job Title | `title` | text |
 | Company | `company` | text |
-| Location | `location` | text |
-| Start Month | month part of `start_date` | dropdown |
-| Start Year | year part of `start_date` | text |
-| End Month | month part of `end_date` (or check "I currently work here") | dropdown / checkbox |
-| End Year | year part of `end_date` | text |
-| Description | `description` | textarea |
-
-After each entry: click "Add Another Work Experience", take scoped snapshot on `role=group[name="Work Experience N"]` for fresh refs before filling the next entry.
+| Location | `location` | text (if present) |
+| Start Month/Year | `start_date` | spinbutton — blur required |
+| End Month/Year | `end_date` (or "currently work here" checkbox) | spinbutton — blur required |
+| Description | `description` | textarea — direct assignment |
 
 **Step 4 — Education** (repeat for each entry in `education`, in order)
 
@@ -336,7 +405,7 @@ After each entry: click "Add Another Work Experience", take scoped snapshot on `
 |---|---|---|---|
 | School | `school` | text | |
 | Degree | `degree` | `custom-listbox` | Map: MSc → "Master of Science", HBSc → "Bachelor of Science" |
-| Field of Study | `field` | `virtual-list` | Use JS scroll method |
+| Field of Study | — | `virtual-list` | **SKIP** — not required in any observed Workday instance |
 | Start Year | `start_year` | text | |
 | End Year | `end_year` | text | |
 | GPA | `gpa` | text | Only if field is shown |
@@ -345,6 +414,18 @@ After each entry: click "Add Another Education", take scoped snapshot on `role=g
 
 **Step 5 — Skip list**
 Skills → SKIP. Certifications → SKIP. Languages → SKIP.
+
+**Step 6 — Pre-Save validation**
+
+Before clicking Save/Next, run this check to detect empty required fields:
+
+```js
+() => Array.from(document.querySelectorAll('p, span, div'))
+  .filter(el => el.childElementCount === 0 && el.textContent.includes('required and must'))
+  .map(el => el.textContent.trim())
+```
+
+If the array is non-empty, diagnose the missing fields before retrying. Most common cause: date spinbutton blur not fired — re-fill those dates with the blur pattern.
 
 Delta-scan after: catch custom fields (e.g. portfolio URL, cover letter upload, open-ended text questions placed on this page).
 
@@ -393,6 +474,103 @@ No fields. Verify the form is complete, then notify the user:
 
 ---
 
+## RBC Playbook
+
+### Detection
+
+URL matches: `jobs.rbc.com`
+
+### Pre-flight (run once before Page 1)
+
+1. **Close extra tabs** — Playwright MCP can misfire onto open tabs (e.g. Indeed search). Close all tabs except the RBC application.
+2. **Identify resume file**: Check `output/` for tailored PDF; fall back to `resume/resume.pdf`.
+3. **Upload resume first** — Resume upload is mandatory and must be done before any other field on Page 1. The file chooser is triggered by clicking the "Upload resume" button, then `browser_file_upload`. A success alert and a "Check out these tips" modal appear — dismiss the modal with "No thanks, I'll keep applying".
+4. **Expect PDF parser errors on Page 2** — RBC's parser merges work entries, introduces wrong company names (from client mentions), and creates duplicate education entries. Always re-scan Page 2 after upload and fix before advancing.
+5. **`isPreppedSubscribed` hidden field** — RBC embeds a Prepped.ai career coaching widget on Page 1 that may fail to load. If the Next button is blocked by a "should be string" validation error on `#isPreppedSubscribed`, run:
+   ```js
+   () => {
+     const el = document.querySelector('#isPreppedSubscribed');
+     const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+     setter.call(el, 'false');
+     el.dispatchEvent(new Event('input', { bubbles: true }));
+     el.dispatchEvent(new Event('change', { bubbles: true }));
+   }
+   ```
+   Then click Next again.
+
+### Page 1 — My Information
+
+Snapshot: `browser_snapshot(depth=3)` then scoped on `group[name="cntryFields"]` — avoid full snapshot (country dropdown has 200+ options).
+
+| Field | Source | Widget | Notes |
+|---|---|---|---|
+| Country | `personal.address.country` | native select | Pre-filled as Canada |
+| First Name | `personal.first_name` | text | |
+| Last Name | `personal.last_name` | text | |
+| Address Line 1 | `personal.address.street` | text | |
+| City | `personal.address.city` | text | |
+| Province or Territory | `personal.address.state` → "Ontario" | native select | |
+| Postal Code | `personal.address.zip` | text | |
+| Email | `personal.email` | text | |
+| Phone Device Type | "Mobile" | native select | |
+| Country Phone Code | "Canada (+1)" | native select | |
+| Phone number | strip `+1-` from `personal.phone` → digits only | text | Use `browser_click` then `browser_type(slowly=true)` |
+| How did you hear about us? | "Job Board" | native select | |
+| Source | "Indeed" (not "Indeed Organic") | native select | |
+| Have you worked for RBC? | "No" | native select | |
+
+Delta-scan after: check for `isPreppedSubscribed` blocker before clicking Next.
+
+### Page 2 — My Experience (`workAndEducation`)
+
+Snapshot: save to `filename` — page is large due to multiple work/education entries.
+
+1. Resume already uploaded in pre-flight.
+2. After upload, re-scan the full page. The PDF parser will have auto-populated fields — verify and fix:
+   - Check each work entry: job title, company name, dates, description
+   - Check education count: should match `profile.yaml` entries exactly — remove extras using Remove buttons
+   - Check degree values for each education entry
+3. Language section: add English → Fluent (if shown).
+
+### Page 3 — Application Questions (`jobSpecificQuestions`)
+
+All native `<select>` — use batch fill via `browser_evaluate`:
+
+| Field | Value | Source |
+|---|---|---|
+| Legally eligible to work in Canada? | Yes | `work_authorization.authorized` |
+| Require sponsorship? | No | `work_authorization.requires_sponsorship` |
+| Language preference | English | default |
+| Currently a student? | No | — |
+| Available to start | computed from `availability.start_date` | YYYY-MM-DD format |
+| Family members at RBC? | No | — |
+| Government official / PEP? | No | — |
+| Referred by govt official? | No | — |
+| Ever employed by PwC? | No | — |
+| Registered with financial regulator? | No | SOA/CFA exams are credentials, not registrations |
+| Consent to retain application? | I consent | — |
+
+### Page 4 — Voluntary Disclosures + Terms & Conditions (`applicantAcknowledgment`)
+
+| Field | Source | Widget | Notes |
+|---|---|---|---|
+| Sex | "Male" | native select | Maps from `diversity.gender = "Man"` |
+| Gender Identity | `diversity.gender` → "Man" | native select | |
+| LGBTQ+ Community Member | `diversity.lgbtq2plus` → "No" | native select | |
+| Person with disability? | "No" | native select | `diversity.disability_status = "No disability"` |
+| Race/Ethnicity | see note | native select | Required (*). Profile value "Racialized/ East Asian (Canada)" → ask user for specific option (Chinese, Japanese, Korean, etc.) if not already recorded |
+| Veteran/Military Status | "I do not have military experience..." | native select | |
+| I accept (Terms & Conditions) | check | checkbox | Required — check before clicking Next |
+
+Race/Ethnicity for Vincent: **Chinese**. Update `profile.yaml` with `diversity.ethnicity_rbc: "Chinese"` to avoid asking again.
+
+### Page 5 — Review (`applicationReview`)
+
+No fields. Notify user:
+> "Form filled for **RBC — [Role]**. Review it in the browser and type 'submit' to confirm."
+
+---
+
 ## Learned Patterns
 
 Use this section for new ATS behaviors and workarounds that don't yet have a full playbook. Once enough patterns accumulate for an ATS, graduate them into a named playbook section.
@@ -408,6 +586,41 @@ Source is stored in `profile.yaml` under `how_did_you_hear_about_us`.
 ### Workday: Skills typeahead does not list programming languages
 
 Common skills like "Python", "SQL" return "No Items." in Workday's skill catalogue. Skip the Skills section unless the ATS has a known compatible list. Do not waste cycles searching.
+
+### Workday: "How Did You Hear About Us?" — options vary by instance
+
+Options are instance-specific. Always open the dropdown and read the actual options before selecting — do not assume from other instances. Observed options:
+- Manulife Workday: radio buttons (not a dropdown)
+- Edelman Workday: Corporate Website, Glassdoor, Handshake, **Indeed**, LinkedIn, LinkedIn - Alumni, Other
+
+### Workday: JS `.click()` does not register on options
+
+Do not use `browser_evaluate` to call `.click()` on option elements — Workday ignores synthetic JS clicks. Always use `browser_click` with the accessibility tree ref from a fresh snapshot.
+
+### Workday: date spinbutton requires blur to commit value
+
+Workday date inputs are spinbutton elements. Setting the value programmatically without dispatching a `blur` event leaves the display div empty and the form shows "From is required" on Save even though the underlying input has a value. Always fire blur after each date field:
+
+```js
+const fillDate = (el, value) => {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+  el.focus();
+  setter.call(el, value);
+  el.dispatchEvent(new InputEvent('input', { bubbles: true, data: String(value) }));
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+  el.dispatchEvent(new Event('blur', { bubbles: true }));
+};
+```
+
+### Workday: textarea fill — use direct assignment, not HTMLInputElement setter
+
+`HTMLInputElement.prototype.value` setter throws "Illegal invocation" on `<textarea>` elements. Use direct assignment:
+
+```js
+el.value = text;
+el.dispatchEvent(new Event('input', { bubbles: true }));
+el.dispatchEvent(new Event('change', { bubbles: true }));
+```
 
 ---
 
@@ -430,3 +643,5 @@ If a CAPTCHA is encountered at any point during the run:
 | Page fails to load after Next/Continue | Stop, notify user, wait for instruction |
 | Login wall encountered | Stop, notify user to log in manually, wait for "continue" |
 | CAPTCHA | See CAPTCHA Handling above |
+| Next button blocked by hidden field validation (e.g. `isPreppedSubscribed`) | Use `browser_evaluate` with React native setter + `input`/`change` events to set the value. See RBC playbook for exact snippet. |
+| Cross-tab click misfire (button click resolves to wrong tab) | Close all non-target tabs before starting. If a misfire already occurred, switch back to the application tab with `browser_tabs(action=select)` and re-snapshot to verify state. |
