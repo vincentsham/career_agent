@@ -115,7 +115,13 @@ A 3-phase career agent that tailors resumes, fills job applications, and scrapes
 
 **Trigger:** Any prompt to fill a job application form, or hand-over from Phase 3.
 
-**Instructions:** Read `playbooks/form-filling-core.md` and follow it exactly. Read the file at the start of every Phase 2 run — do not rely on memory of its contents.
+**Instructions:** Phase 2 uses a 3-tier knowledge model. At the start of every run, do not rely on memory:
+
+1. Read `playbooks/form-filling-core.md` (the core spec) and follow it exactly.
+2. Detect the ATS from the tab URL. If `playbooks/<ats>.yaml` exists, read it and follow it.
+3. Compute the tenant host (URL host). If `playbooks/<ats>/<host>.yaml` exists, read it and replay it via the core spec's Probe → Replay → Record loop.
+
+Design rationale (not operational): `docs/superpowers/specs/form-filling-v2-design.md`.
 
 ## Phase 2: Cover Letter Generator
 
